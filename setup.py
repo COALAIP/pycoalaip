@@ -41,7 +41,6 @@ setup(
     include_package_data=True,
     install_requires=[],
     tests_require=tests_require,
-    setup_requires=['pytest-runner'],
     extras_require={
         'test': tests_require,
         'dev': dev_require + tests_require + docs_require,
