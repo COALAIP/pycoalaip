@@ -14,7 +14,7 @@ To install pycoalaip, run this command in your terminal:
 
     $ pip install coalaip
 
-This is the preferred method to install pycoalaip, as it will always install the most recent stable release. 
+This is the preferred method to install pycoalaip, as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -34,12 +34,6 @@ You can either clone the public repository:
 
     $ git clone git://github.com/bigchaindb/coalaip
 
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl  -OL https://github.com/bigchaindb/coalaip/tarball/master
-
 Once you have a copy of the source, you can install it with:
 
 .. code-block:: console
@@ -47,5 +41,4 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/bigchaindb/coalaip
-.. _tarball: https://github.com/bigchaindb/coalaip/tarball/master
+.. _Github repo: https://github.com/bigchaindb/pycoalaip

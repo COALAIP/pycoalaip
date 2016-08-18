@@ -35,7 +35,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="BigchainDB",
     author_email='dev@bigchaindb.com',
-    url='https://github.com/bigchaindb/coalaip',
+    url='https://github.com/bigchaindb/pycoalaip',
     packages=['coalaip'],
     package_dir={'coalaip': 'coalaip'},
     include_package_data=True,
