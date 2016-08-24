@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 test_coalaip
@@ -26,4 +25,3 @@ class TestCoalaip(object):
     @classmethod
     def teardown_class(cls):
         pass
-
