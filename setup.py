@@ -10,6 +10,9 @@ with open('HISTORY.rst') as history_file:
 
 long_discription = readme + '\n\n' + history
 
+install_requires = [
+]
+
 tests_require = [
     'coverage',
     'pep8',
@@ -32,7 +35,7 @@ docs_require = [
 
 setup(
     name='coalaip',
-    version='0.1.0',
+    version='0.0.1.dev1',
     description="Python reference implementation for COALA IP",
     long_description=long_discription,
     author="BigchainDB",
@@ -40,7 +43,7 @@ setup(
     url='https://github.com/bigchaindb/pycoalaip',
     packages=find_packages(exclude=['tests*']),
     include_package_data=True,
-    install_requires=[],
+    install_requires=install_requires,
     tests_require=tests_require,
     extras_require={
         'test': tests_require,
