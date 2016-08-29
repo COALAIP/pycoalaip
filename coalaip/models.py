@@ -219,7 +219,7 @@ class Manifestation(Creation):
     INSTANTIATION NOTES
     """
 
-    def __init__(self, data, *, entity_type=None, plugin, **kwargs):
+    def __init__(self, data, *, entity_type='CreativeWork', plugin, **kwargs):
         """Initialize a :class:`~coalaip.models.Manifestation` instance
 
         INSTANTIATION NOTES
