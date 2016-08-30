@@ -92,6 +92,7 @@ class CoalaIpEntity:
             the status of the entity, as defined by the persistence layer
         """
 
+        # FIXME: catch errors
         return self._plugin.get_status(self._persist_id)
 
     def to_json(self):

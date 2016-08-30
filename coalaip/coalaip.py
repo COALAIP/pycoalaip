@@ -6,8 +6,7 @@ RegistrationResult = namedtuple('RegistrationResult',
                                 ['copyright', 'manifestation', 'work'])
 
 
-# FIXME: maybe there's a better way to accomplish this?
-class BoundCoalaIp:
+class CoalaIp:
     """Plugin-bound CoalaIP top-level functions.
 
     Instantiated with an subclass implementing the ledger plugin
@@ -20,165 +19,153 @@ class BoundCoalaIp:
     """
 
     def __init__(self, plugin):
+        """Instantiate a new CoalaIp wrapper object.
+
+        Args:
+            plugin (Plugin, keyword): the persistence layer plugin
+        """
+
         # FIXME: check that plugin is instance of AbstractPlugin
+        if not plugin:
+            raise ValueError('Provide a Plugin object')
         self._plugin = plugin
-
-    def generate_user(self, *args, **kwargs):
-        generate_user(plugin=self._plugin, *args, **kwargs)
-
-    def register_manifestation(self, *args, **kwargs):
-        register_manifestation(plugin=self._plugin, *args, **kwargs)
-
-    def derive_right(self, *args, **kwargs):
-        derive_right(plugin=self._plugin, *args, **kwargs)
-
-    def transfer_right(self, *args, **kwargs):
-        transfer_right(plugin=self._plugin, *args, **kwargs)
 
     def __repr__(self):
         return 'CoalaIp bound to plugin: {}'.format(self._plugin)
 
+    def generate_user(self, *args, **kwargs):
+        """Generate a new user for the backing persistence layer.
 
-def bind_plugin(plugin):
-    return BoundCoalaIp(plugin)
+        Args:
+            *args: argument list passed to the plugin's generate_user()
+            **kwargs: keyword arguments passed to the plugin's
+                generate_user()
 
+        Returns:
+            a representation of a user, based on the persistence layer
+                plugin
+        """
 
-def generate_user(*args, plugin, **kwargs):
-    """Generate a new user for the backing persistence layer.
+        return self._plugin.generate_user(*args, **kwargs)
 
-    Args:
-        plugin (Plugin, keyword): the persistence layer plugin
-        *args: argument list passed to the plugin's generate_user()
-        **kwargs: keyword arguments passed to the plugin's generate_user()
+    # FIXME: could probably have a 'safe' check to make sure the entities are actually created
+    def register_manifestation(self, manifestation_data, *, user,
+                               existing_work=None, work_data=None,
+                               data_format=None):
+        """Register a Manifestation and automatically assign its
+        corresponding Copyright to the given 'user'.
 
-    Returns:
-        a representation of a user, based on the persistence layer
-            plugin
-    """
+        Unless specified (see 'existing_work'), also registers a new
+        Work for the Manifestation.
 
-    return plugin.generate_user(*args, **kwargs)
+        Args:
+            manifestation_data (dict): a dict holding the model data for
+                the Manifestation
+            user (*, keyword): a user based on the format specified by
+                the persistence layer
+            existing_work (str|:class:`~coalaip.models.Work`), keyword, optional):
+                the id of an already existing Work that the
+                Manifestation is derived from.
+                If specified, the 'work_data' parameter is ignored.
+            work_data (dict, keyword, optional): a dict holding the
+                model data for the Work that will automatically
+                generated for the Manifestation if no existing work is
+                specified.
+                If not specified, the Work will be created using only the
+                name of the Manifestation.
+            data_format (str, keyword, optional): the data format of the
+                created entities; must be one of:
+                    - 'jsonld' (default)
+                    - 'json'
+                    - 'ipld'
 
+        Returns:
+            namedtuple: a namedtuple containing the Coypright of the
+                registered Manifestation, the registered Manifestation,
+                and the Work (either the automatically created Work or
+                the given 'existing_work')::
 
-# FIXME: could probably have a 'safe' check to make sure the entities are actually created
-def register_manifestation(manifestation_data, *, user, existing_work=None,
-                           work_data=None, data_format=None, plugin):
-    """Register a Manifestation and automatically assign its
-    corresponding Copyright to the given 'user'.
+                    (
+                        'copyright': (:class:`~coalaip.models.Copyright`),
+                        'manifestation': (:class:`~coalaip.models.Manifestation`),
+                        'work': (:class:`~coalaip.models.Work`),
+                    )
+        """
 
-    Unless specified (see 'existing_work'), also registers a new Work
-    for the Manifestation.
+        # TODO: in the future, we may want to consider blocking (or asyncing) until
+        # we confirm that an entity has actually been created
 
-    Args:
-        manifestation_data (dict): a dict holding the model data for the
-            Manifestation
-        user (*, keyword): a user based on the format specified by the
-            persistence layer
-        existing_work (str|:class:`~coalaip.models.Work`), keyword, optional):
-            the id of an already existing Work that the Manifestation is
-            derived from.
-            If specified, the 'work_data' parameter is ignored.
-        work_data (dict, keyword, optional): a dict holding the model
-            data for the Work that will automatically generated for the
-            Manifestation if no existing work is specified.
-            If not specified, the Work will be created using only the
-            name of the Manifestation.
-        data_format (str, keyword, optional): the data format of the
-            created entities; must be one of:
-                - 'jsonld' (default)
-                - 'json'
-                - 'ipld'
-        plugin (Plugin, keyword): the persistence layer plugin
+        # FIXME: is there a better way to do this? i.e. undefined in javascript
+        create_kwargs = {}
+        if data_format is not None:
+            create_kwargs['data_format'] = data_format
 
-    Returns:
-        namedtuple: a namedtuple containing the Coypright of the
-            registered Manifestation, the registered Manifestation,
-            and the Work (either the automatically created Work or the
-            given 'existing_work')::
+        work = existing_work
+        if work is None:
+            if work_data is None:
+                work_data = {'name': manifestation_data.get('name')}
+            work = Work(work_data, plugin=self._plugin)
+            work.create(user, **create_kwargs)
+        elif not isinstance(work, Work):
+            raise ValueError(("'existing_work' argument to "
+                              'register_manifestation() must be a Work. '
+                              "Given an instance of '{}'".format(type(work))))
+        elif work.persist_id is not None:
+            raise TypeError(("Work given as 'existing_work' argument to "
+                             'register_manifestation() must have already been '
+                             'created'))
+        work_id = work.persist_id
 
-                (
-                    'copyright': (:class:`~coalaip.models.Copyright`),
-                    'manifestation': (:class:`~coalaip.models.Manifestation`),
-                    'work': (:class:`~coalaip.models.Work`),
-                )
-    """
+        manifestation_data['manifestationOf'] = work_id
+        manifestation = Manifestation(manifestation_data, plugin=self._plugin)
+        manifestation.create(user, **create_kwargs)
 
-    # TODO: in the future, we may want to consider blocking (or asyncing) until
-    # we confirm that an entity has actually been created
+        copyright_data = {'rightsOf': manifestation.id}
+        copyright = Copyright(copyright_data, plugin=self._plugin)
+        copyright.create(user, **create_kwargs)
 
-    # FIXME: is there a better way to do this? i.e. undefined in javascript
-    create_kwargs = {}
-    if data_format is not None:
-        create_kwargs['data_format'] = data_format
+        return RegistrationResult(copyright, manifestation, work)
 
-    work = existing_work
-    if work is None:
-        if work_data is None:
-            work_data = {'name': manifestation_data.get('name')}
-        work = Work(work_data, plugin=plugin)
-        work.create(user, **create_kwargs)
-    elif not isinstance(work, Work):
-        raise ValueError(("'existing_work' argument to "
-                          'register_manifestation() must be a Work. '
-                          "Given an instance of '{}'".format(type(work))))
-    elif work.persist_id is not None:
-        raise TypeError(("Work given as 'existing_work' argument to "
-                         'register_manifestation() must have already been '
-                         'created'))
-    work_id = work.persist_id
+    def derive_right(self, right_data, copyright, *, user, data_format=None):
+        """Derive a new Right from a Manifestation's Copyright.
 
-    manifestation_data['manifestationOf'] = work_id
-    manifestation = Manifestation(manifestation_data, plugin=plugin)
-    manifestation.create(user, **create_kwargs)
+        Args:
+            right_data (dict): a dict holding the model data for the
+                Right
+            copyright (str): the id of the Copyright that this Right
+                should be derived from
+            user (*, keyword): a user based on the format specified by
+                the persistence layer
+            data_format (str, keyword, optional): the data format of the
+                created Right; must be one of:
+                    - 'jsonld' (default)
+                    - 'json'
+                    - 'ipld'
 
-    copyright_data = {'rightsOf': manifestation.id}
-    copyright = Copyright(copyright_data, plugin=plugin)
-    copyright.create(user, **create_kwargs)
+        Returns:
+        """
 
-    return RegistrationResult(copyright, manifestation, work)
+        raise NotImplementedError('derive_right() has not been implemented yet')
 
+    def transfer_right(self, right, rights_assignment_data, *, from_user, to_user,
+                       data_format=None):
+        """Transfer a Right to another user.
 
-def derive_right(right_data, copyright, *, user, data_format=None, plugin):
-    """Derive a new Right from a Manifestation's Copyright.
+        Args:
+            right (str): the id of the Right to transfer
+            rights_assignment_data (dict): a dict holding the model data
+                for the RightsAssignment
+            from_user (*, keyword): a user based on the format specified
+                by the persistence layer
+            to_user (*, keyword): a user based on the format specified
+                by the persistence layer
+            data_format (str, keyword, optional): the data format of the
+                saved RightsAssignment; must be one of:
+                    - 'jsonld' (default)
+                    - 'json'
+                    - 'ipld'
 
-    Args:
-        right_data (dict): a dict holding the model data for the Right
-        copyright (str): the id of the Copyright that this Right should
-            be derived from
-        user (*, keyword): a user based on the format specified by the
-            persistence layer
-        data_format (str, keyword, optional): the data format of the
-            created Right; must be one of:
-                - 'jsonld' (default)
-                - 'json'
-                - 'ipld'
-        plugin (Plugin, keyword): the persistence layer plugin
+        Returns:
+        """
 
-    Returns:
-    """
-
-    raise NotImplementedError('derive_right() has not been implemented yet')
-
-
-def transfer_right(right, rights_assignment_data, *, from_user, to_user,
-                   data_format=None, plugin):
-    """Transfer a Right to another user.
-
-    Args:
-        right (str): the id of the Right to transfer
-        rights_assignment_data (dict): a dict holding the model data for
-            the RightsAssignment
-        from_user (*, keyword): a user based on the format specified by
-            the persistence layer
-        to_user (*, keyword): a user based on the format specified by
-            the persistence layer
-        data_format (str, keyword, optional): the data format of the
-            saved RightsAssignment; must be one of:
-                - 'jsonld' (default)
-                - 'json'
-                - 'ipld'
-        plugin (Plugin, keyword): the persistence layer plugin
-
-    Returns:
-    """
-
-    raise NotImplementedError('transfer_right() has not been implemented yet')
+        raise NotImplementedError('transfer_right() has not been implemented yet')

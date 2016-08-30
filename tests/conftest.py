@@ -24,8 +24,8 @@ def mock_plugin():
 
 @fixture
 def mock_bound_coalaip(mock_plugin):
-    from coalaip import bind_plugin
-    return bind_plugin(mock_plugin)
+    from coalaip import CoalaIp
+    return CoalaIp(mock_plugin)
 
 
 @fixture
