@@ -15,7 +15,71 @@ def test_entities_raise_on_bad_plugin():
 
     plugin = NonSubclassPlugin()
     with raises(TypeError):
-        CoalaIpEntity(data={}, plugin=plugin)
+        CoalaIpEntity(data={}, entity_type='type', plugin=plugin)
+
+
+def test_entities_raise_on_creation_error(mock_plugin, base_entity_model,
+                                          alice_user):
+    from coalaip.exceptions import EntityCreationError
+
+    mock_creation_error = 'mock_creation_error'
+    mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
+    with raises(EntityCreationError) as excinfo:
+        base_entity_model.create(alice_user)
+
+    assert mock_creation_error == excinfo.value.error
+
+
+def test_entities_raise_on_creation_if_already_created(
+        mock_plugin, base_entity_model, alice_user,
+        mock_base_entity_create_id):
+    from coalaip.exceptions import EntityPreviouslyCreatedError
+
+    # Save the entity
+    mock_plugin.save.return_value = mock_base_entity_create_id
+    base_entity_model.create(alice_user)
+
+    # Test create raises on already persisted entity
+    mock_plugin.save.side_effect = EntityPreviouslyCreatedError(
+        mock_base_entity_create_id)
+    with raises(EntityPreviouslyCreatedError) as excinfo:
+        base_entity_model.create(alice_user)
+
+    assert mock_base_entity_create_id == excinfo.value.existing_id
+
+
+def test_entities_have_none_status_if_not_persisted(mock_plugin,
+                                                    base_entity_model):
+    status = base_entity_model.get_status()
+    assert mock_plugin.get_status.call_count == 0
+    assert status is None
+
+
+def test_entities_get_status(mock_plugin, base_entity_model, alice_user,
+                             mock_base_entity_create_id, mock_model_status):
+    # Save the entity
+    mock_plugin.save.return_value = mock_base_entity_create_id
+    base_entity_model.create(alice_user)
+
+    # Test status returned
+    mock_plugin.get_status.return_value = mock_model_status
+    status = base_entity_model.get_status()
+    assert mock_plugin.get_status.call_count == 1
+    assert status == mock_model_status
+
+
+def test_entities_raise_on_status_if_not_found(mock_plugin, base_entity_model,
+                                               alice_user,
+                                               mock_base_entity_create_id):
+    from coalaip.exceptions import EntityNotFoundError
+
+    # Save the entity
+    mock_plugin.save.return_value = mock_base_entity_create_id
+    base_entity_model.create(alice_user)
+
+    mock_plugin.get_status.side_effect = EntityNotFoundError()
+    with raises(EntityNotFoundError):
+        base_entity_model.get_status()
 
 
 def test_work_init(mock_plugin, work_data, work_json,
@@ -51,23 +115,6 @@ def test_work_create(mock_plugin, work_model, alice_user, data_format,
 def test_work_create_raises_on_bad_format(work_model, alice_user):
     with raises(ValueError):
         work_model.create(alice_user, 'bad_format')
-
-
-def test_work_get_status_none_if_not_persisted(mock_plugin, work_model):
-    status = work_model.get_status()
-    assert mock_plugin.get_status.call_count == 0
-    assert status is None
-
-
-def test_work_get_status(mock_plugin, work_model, mock_work_create_id,
-                         mock_model_status):
-    mock_plugin.get_status.return_value = mock_model_status
-
-    # Fake that the work's been persisted and try again
-    work_model._persist_id = mock_work_create_id
-    status = work_model.get_status()
-    assert mock_plugin.get_status.call_count == 1
-    assert status == mock_model_status
 
 
 def test_work_non_transferrable(work_model):
@@ -149,25 +196,6 @@ def test_manifestation_create(mock_plugin, manifestation_model, alice_user,
     mock_plugin.save.assert_called_with(model_data, user=alice_user)
 
 
-def test_manifestation_get_status_none_if_not_persisted(mock_plugin,
-                                                        manifestation_model):
-    status = manifestation_model.get_status()
-    assert mock_plugin.get_status.call_count == 0
-    assert status is None
-
-
-def test_manifestation_get_status(mock_plugin, manifestation_model,
-                                  mock_manifestation_create_id,
-                                  mock_model_status):
-    mock_plugin.get_status.return_value = mock_model_status
-
-    # Fake that the copyright's been persisted and try to transfer again
-    manifestation_model._persist_id = mock_manifestation_create_id
-    status = manifestation_model.get_status()
-    assert mock_plugin.get_status.call_count == 1
-    assert status == mock_model_status
-
-
 def test_manifestation_non_transferrable(manifestation_model):
     with raises(AttributeError):
         manifestation_model.transfer()
@@ -223,24 +251,6 @@ def test_copyright_create(mock_plugin, copyright_model, alice_user,
     mock_plugin.save.assert_called_with(model_data, user=alice_user)
 
 
-def test_copyright_get_status_none_if_not_persisted(mock_plugin,
-                                                    copyright_model):
-    status = copyright_model.get_status()
-    assert mock_plugin.get_status.call_count == 0
-    assert status is None
-
-
-def test_copyright_get_status(mock_plugin, copyright_model,
-                              mock_copyright_create_id, mock_model_status):
-    mock_plugin.get_status.return_value = mock_model_status
-
-    # Fake that the copyright's been persisted and try to transfer again
-    copyright_model._persist_id = mock_copyright_create_id
-    status = copyright_model.get_status()
-    assert mock_plugin.get_status.call_count == 1
-    assert status == mock_model_status
-
-
 @mark.parametrize('data_format,rights_assignment_data_name', [
     ('', 'rights_assignment_jsonld'),
     ('json', 'rights_assignment_json'),
@@ -253,15 +263,16 @@ def test_copyright_transferrable(mock_plugin, copyright_model,
                                  mock_rights_assignment_create_id, request):
     from coalaip.exceptions import EntityNotYetPersistedError
 
-    mock_plugin.transfer.return_value = mock_rights_assignment_create_id
-
     with raises(EntityNotYetPersistedError):
         copyright_model.transfer(rights_assignment_data, from_user=alice_user,
                                  to_user=bob_user)
 
-    # Fake that the copyright's been persisted and try to transfer again
-    copyright_model._persist_id = mock_copyright_create_id
+    # Save the Copyright
+    mock_plugin.save.return_value = mock_copyright_create_id
+    copyright_model.create(user=alice_user)
 
+    # Test the transfer
+    mock_plugin.transfer.return_value = mock_rights_assignment_create_id
     transfer_kwargs = {
         'from_user': alice_user,
         'to_user': bob_user

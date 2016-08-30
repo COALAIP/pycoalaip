@@ -34,6 +34,17 @@ def mock_model_status():
 
 
 @fixture
+def base_entity_model(mock_plugin):
+    from coalaip.models import CoalaIpEntity
+    return CoalaIpEntity(data={}, entity_type='type', plugin=mock_plugin)
+
+
+@fixture
+def mock_base_entity_create_id():
+    return 'mock_entity_create_id'
+
+
+@fixture
 def work_data():
     return {
         'name': 'Title',

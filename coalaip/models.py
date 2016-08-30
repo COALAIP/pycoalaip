@@ -10,7 +10,8 @@ from coalaip import context_urls
 from coalaip.exceptions import (
     EntityError,
     EntityDataError,
-    EntityNotYetPersistedError
+    EntityNotYetPersistedError,
+    EntityPreviouslyCreatedError,
 )
 from coalaip.plugin import AbstractPlugin
 
@@ -83,10 +84,22 @@ class CoalaIpEntity:
                     - 'ipld'
 
         Returns:
+            str: the id of this entity on the persistence layer
+
+        Raises:
+            :class:`EntityCreationError`: if an error occurred during
+                the creation of this entity that caused it to \*NOT\* be
+                persisted. Contains the original error from the
+                persistence layer, if available.
+            :class:`EntityPreviouslyCreatedError`: if the entity has
+                already been persisted. Should contain the existing id
+                of the entity on the persistence layer.
         """
 
+        if self._persist_id:
+            raise EntityPreviouslyCreatedError(self._persist_id)
+
         entity_data = self._to_format(data_format)
-        # FIXME: catch errors
         self._persist_id = self._plugin.save(entity_data, user=user)
         return self._persist_id
 
@@ -97,11 +110,14 @@ class CoalaIpEntity:
         Returns:
             the status of the entity, as defined by the persistence
                 layer, or None if the entity is not yet persisted.
+
+        Raises:
+            :class:`EntityNotFoundError`: if the entity is persisted,
+                but could not be found on the persistence layer
         """
 
         if self._persist_id is None:
             return None
-        # FIXME: catch errors
         return self._plugin.get_status(self._persist_id)
 
     def to_json(self):
