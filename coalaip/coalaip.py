@@ -125,19 +125,20 @@ class CoalaIp:
         manifestation.create(user, **create_kwargs)
 
         copyright_data = {'rightsOf': manifestation.id}
-        copyright = Copyright(copyright_data, plugin=self._plugin)
-        copyright.create(user, **create_kwargs)
+        manifestation_copyright = Copyright(copyright_data, plugin=self._plugin)
+        manifestation_copyright.create(user, **create_kwargs)
 
-        return RegistrationResult(copyright, manifestation, work)
+        return RegistrationResult(manifestation_copyright, manifestation, work)
 
-    def derive_right(self, right_data, copyright, *, user, data_format=None):
+    def derive_right(self, right_data, from_copyright, *, user,
+                     data_format=None):
         """Derive a new Right from a Manifestation's Copyright.
 
         Args:
             right_data (dict): a dict holding the model data for the
                 Right
-            copyright (str): the id of the Copyright that this Right
-                should be derived from
+            from_copyright (str): the id of the Copyright that this
+                Right should be derived from
             user (*, keyword): a user based on the format specified by
                 the persistence layer
             data_format (str, keyword, optional): the data format of the
