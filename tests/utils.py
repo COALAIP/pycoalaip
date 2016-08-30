@@ -1,9 +1,10 @@
 from unittest.mock import Mock
+from coalaip.plugin import AbstractPlugin
 
 
 def create_mock_plugin():
     mock_plugin = Mock(
         name="mock_ledger_plugin",
-        spec_set=['generate_user', 'get_status', 'save', 'transfer', 'type'])
+        spec_set=AbstractPlugin)
     mock_plugin.type = 'mock'
     return mock_plugin

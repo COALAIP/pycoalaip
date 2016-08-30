@@ -12,6 +12,7 @@ from coalaip.exceptions import (
     EntityDataError,
     EntityNotYetPersistedError
 )
+from coalaip.plugin import AbstractPlugin
 
 
 DEFAULT_LD_CONTEXT = [context_urls.COALAIP, context_urls.SCHEMA]
@@ -32,7 +33,12 @@ class CoalaIpEntity:
         INSTANTIATION NOTES
         """
 
-        # FIXME: check that plugin is instance of AbstractPlugin
+        if not isinstance(plugin, AbstractPlugin):
+            raise TypeError(('A plugin subclassing '
+                             "'coalaip.plugin.AbstractPlugin' must be "
+                             'provided when instantiating a CoalaIp entity '
+                             'instance. Given a plugin of type '
+                             "'{}' instead.".format(type(plugin))))
 
         if not isinstance(entity_type, str):
             raise EntityDataError(('The entity type must be provided as a '

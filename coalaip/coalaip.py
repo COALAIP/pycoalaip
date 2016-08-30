@@ -1,5 +1,6 @@
 from collections import namedtuple
 from coalaip.models import Copyright, Manifestation, Work
+from coalaip.plugin import AbstractPlugin
 
 
 RegistrationResult = namedtuple('RegistrationResult',
@@ -25,9 +26,12 @@ class CoalaIp:
             plugin (Plugin, keyword): the persistence layer plugin
         """
 
-        # FIXME: check that plugin is instance of AbstractPlugin
-        if not plugin:
-            raise ValueError('Provide a Plugin object')
+        if not isinstance(plugin, AbstractPlugin):
+            raise TypeError(('A plugin subclassing '
+                             "'coalaip.plugin.AbstractPlugin' must be "
+                             'provided when instantiating a CoalaIp instance. '
+                             'Given a plugin of type '
+                             "'{}' instead.".format(type(plugin))))
         self._plugin = plugin
 
     def __repr__(self):
