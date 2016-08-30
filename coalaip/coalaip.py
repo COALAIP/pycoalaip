@@ -43,18 +43,20 @@ def bind_plugin(plugin):
     return BoundCoalaIp(plugin)
 
 
-def create_user(*, plugin, **kwargs):
-    """Create a new user for the backing persistence layer
+def create_user(*args, plugin, **kwargs):
+    """Create a new user for the backing persistence layer.
 
     Args:
-        plugin (): the persistence layer plugin
+        plugin (Plugin, keyword): the persistence layer plugin
+        *args: argument list passed to the plugin's create_user()
+        **kwargs: keyword arguments passed to the plugin's create_user()
 
     Returns:
         a representation of a user, based on the persistence layer
             plugin
     """
 
-    return plugin.create_user()
+    return plugin.create_user(*args, **kwargs)
 
 
 def register_manifestation(manifestation_data, *, user, existing_work=None,
