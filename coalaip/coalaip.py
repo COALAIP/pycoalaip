@@ -13,7 +13,7 @@ class BoundCoalaIp:
     Instantiated with an subclass implementing the ledger plugin
     interface (:class:`~coalaip.plugin.AbstractPlugin`) that will
     automatically be bound to all top-level functions:
-        - :func:`create_user`
+        - :func:`generate_user`
         - :func:`register_manifestation`
         - :func:`derive_right`
         - :func:`transfer_right`
@@ -23,8 +23,8 @@ class BoundCoalaIp:
         # FIXME: check that plugin is instance of AbstractPlugin
         self._plugin = plugin
 
-    def create_user(self, *args, **kwargs):
-        create_user(plugin=self._plugin, *args, **kwargs)
+    def generate_user(self, *args, **kwargs):
+        generate_user(plugin=self._plugin, *args, **kwargs)
 
     def register_manifestation(self, *args, **kwargs):
         register_manifestation(plugin=self._plugin, *args, **kwargs)
@@ -43,22 +43,23 @@ def bind_plugin(plugin):
     return BoundCoalaIp(plugin)
 
 
-def create_user(*args, plugin, **kwargs):
-    """Create a new user for the backing persistence layer.
+def generate_user(*args, plugin, **kwargs):
+    """Generate a new user for the backing persistence layer.
 
     Args:
         plugin (Plugin, keyword): the persistence layer plugin
-        *args: argument list passed to the plugin's create_user()
-        **kwargs: keyword arguments passed to the plugin's create_user()
+        *args: argument list passed to the plugin's generate_user()
+        **kwargs: keyword arguments passed to the plugin's generate_user()
 
     Returns:
         a representation of a user, based on the persistence layer
             plugin
     """
 
-    return plugin.create_user(*args, **kwargs)
+    return plugin.generate_user(*args, **kwargs)
 
 
+# FIXME: could probably have a 'safe' check to make sure the entities are actually created
 def register_manifestation(manifestation_data, *, user, existing_work=None,
                            work_data=None, data_format=None, plugin):
     """Register a Manifestation and automatically assign its
