@@ -126,11 +126,11 @@ class CoalaIp:
                              'created'))
         work_id = work.persist_id
 
-        manifestation_data['manifestationOf'] = work_id
+        manifestation_data['manifestationOfWork'] = work_id
         manifestation = Manifestation(manifestation_data, plugin=self._plugin)
         manifestation.create(user, **create_kwargs)
 
-        copyright_data = {'rightsOf': manifestation.id}
+        copyright_data = {'rightsOf': manifestation.persist_id}
         manifestation_copyright = Copyright(copyright_data, plugin=self._plugin)
         manifestation_copyright.create(user, **create_kwargs)
 
