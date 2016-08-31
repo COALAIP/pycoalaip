@@ -69,10 +69,9 @@ def mock_work_create_id():
     return 'mock_create_id'
 
 
-# FIXME: the factories should default their required IDs to the mock ones
 @fixture
-def manifestation_data_factory():
-    def factory(*, manifestationOfWork, data=None):
+def manifestation_data_factory(mock_work_create_id):
+    def factory(*, manifestationOfWork=mock_work_create_id, data=None):
         manifestation_data = {
             'name': 'Title',
             'creator': 'https://ipdb.foundation/api/transactions/12346789',
@@ -128,8 +127,13 @@ def mock_manifestation_create_id():
 
 
 @fixture
-def copyright_data_factory():
-    def factory(*, rightsOf, data=None):
+def mock_manifestation_type():
+    return 'mock_manifestation_type'
+
+
+@fixture
+def copyright_data_factory(mock_manifestation_create_id):
+    def factory(*, rightsOf=mock_manifestation_create_id, data=None):
         copyright_data = {
             'rightsOf': rightsOf
         }
@@ -169,31 +173,49 @@ def copyright_model(mock_plugin, copyright_data_factory,
 
 
 @fixture
+def mock_copyright_create_id():
+    return 'mock_copyright_create_id'
+
+
+@fixture
 def transfer_contract_url():
     return 'https://ipdb.s3.amazonaws.com/1234567890.pdf'
 
 
 @fixture
-def rights_assignment_jsonld(transfer_contract_url):
+def rights_assignment_data(transfer_contract_url):
     return {
-        '@context': DEFAULT_LD_CONTEXT,
-        '@type': 'RightsTransferAction',
         'transferContract': transfer_contract_url
     }
 
 
 @fixture
-def rights_assignment_json(transfer_contract_url):
-    return {
-        'type': 'RightsTransferAction',
-        'transferContract': transfer_contract_url
+def rights_assignment_jsonld(rights_assignment_data):
+    ld_data = {
+        '@context': DEFAULT_LD_CONTEXT,
+        '@type': 'RightsTransferAction',
+        '@id': '',
     }
+    return extend_dict(ld_data, rights_assignment_data)
+
+
+@fixture
+def rights_assignment_json(rights_assignment_data):
+    json_data = {
+        'type': 'RightsTransferAction',
+    }
+    return extend_dict(json_data, rights_assignment_data)
 
 
 @fixture
 def rights_assignment_model(mock_plugin, rights_assignment_json):
     from coalaip.models import RightsAssignment
     return RightsAssignment(rights_assignment_json, plugin=mock_plugin)
+
+
+@fixture
+def mock_rights_assignment_create_id():
+    return 'mock_rights_assignment_create_id'
 
 
 @fixture
