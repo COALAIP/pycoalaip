@@ -52,7 +52,7 @@ class CoalaIp:
 
         return self._plugin.generate_user(*args, **kwargs)
 
-    # FIXME: could probably have a 'safe' check to make sure the entities are actually created
+    # TODO: could probably have a 'safe' check to make sure the entities are actually created
     def register_manifestation(self, manifestation_data, *, user,
                                existing_work=None, work_data=None,
                                data_format=None):

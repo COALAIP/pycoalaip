@@ -4,8 +4,6 @@ from coalaip.context_urls import COALAIP
 from coalaip.models import DEFAULT_LD_CONTEXT
 from coalaip.utils import extend_dict
 
-from tests.utils import create_mock_plugin
-
 
 @fixture
 def alice_user():
@@ -19,11 +17,12 @@ def bob_user():
 
 @fixture
 def mock_plugin():
+    from tests.utils import create_mock_plugin
     return create_mock_plugin()
 
 
 @fixture
-def mock_bound_coalaip(mock_plugin):
+def mock_coalaip(mock_plugin):
     from coalaip import CoalaIp
     return CoalaIp(mock_plugin)
 
@@ -230,16 +229,25 @@ def mock_rights_assignment_create_id():
 
 
 @fixture
-def persisted_registration(mock_bound_coalaip, manifestation_data_factory,
-                           alice_user):
+def persisted_jsonld_registration(mock_plugin, mock_coalaip,
+                                  manifestation_data_factory, alice_user,
+                                  mock_work_create_id,
+                                  mock_manifestation_create_id,
+                                  mock_copyright_create_id):
+    from tests.utils import create_entity_id_setter
+
     # Create the default manifestation model, but remove the
     # 'manifestationOfWork' key since it'll be created through registration
-    manifestation_model = manifestation_data_factory(
-        manifestationOfWork='none'
-    )
+    manifestation_model = manifestation_data_factory()
     del manifestation_model['manifestationOfWork']
 
-    return mock_bound_coalaip.register_manifestation(
+    # Set the persisted ids of the entities
+    mock_plugin.save.side_effect = create_entity_id_setter(
+        mock_work_create_id,
+        mock_manifestation_create_id,
+        mock_copyright_create_id)
+
+    return mock_coalaip.register_manifestation(
         manifestation_model,
         user=alice_user
     )
