@@ -300,8 +300,8 @@ class Right(CoalaIpTransferrableEntity):
             transfer_payload = rights_assignment._to_format(
                 rights_assignment_format)
 
-        super().transfer(self._persist_id, transfer_payload,
-                         from_user=from_user, to_user=to_user)
+        return super().transfer(transfer_payload, from_user=from_user,
+                                to_user=to_user)
 
 
 class Copyright(Right):
