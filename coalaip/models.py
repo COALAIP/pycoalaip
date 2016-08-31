@@ -92,12 +92,15 @@ class CoalaIpEntity:
 
     def get_status(self):
         """Get the current status of this entity, including it's state
-        in the backing persistence layer
+        in the backing persistence layer.
 
         Returns:
-            the status of the entity, as defined by the persistence layer
+            the status of the entity, as defined by the persistence
+                layer, or None if the entity is not yet persisted.
         """
 
+        if self._persist_id is None:
+            return None
         # FIXME: catch errors
         return self._plugin.get_status(self._persist_id)
 
