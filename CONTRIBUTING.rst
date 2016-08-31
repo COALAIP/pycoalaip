@@ -83,7 +83,7 @@ Ready to contribute? Here's how to set up `coalaip` for local development.
    the tests, including testing other Python versions with tox::
 
     $ flake8 coalaip tests
-    $ python setup.py test or py.test
+    $ python setup.py test or pytest
     $ tox
 
    To get flake8 and tox, just pip install them into your virtualenv.
@@ -114,4 +114,12 @@ Tips
 
 To run a subset of tests::
 
-$ py.test tests.test_coalaip
+$ pytest tests.test_coalaip
+
+To run tests with debugging::
+
+$ pytest -s
+
+To run tests and break on errors::
+
+$ pytest --pdb

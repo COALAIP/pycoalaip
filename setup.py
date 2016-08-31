@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -8,12 +8,19 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
+long_discription = readme + '\n\n' + history
+
+install_requires = [
+    'PyLD'
+]
+
 tests_require = [
-    'coverage',
-    'pep8',
-    'pyflakes',
-    'pylint',
+    'tox>=2.3.1',
+    'coverage>=4.1',
+    'flake8>=2.6.0',
+    'pytest>=3.0.1',
     'pytest-cov',
+    'pytest-mock',
 ]
 
 dev_require = [
@@ -22,7 +29,7 @@ dev_require = [
 ]
 
 docs_require = [
-    'Sphinx>=1.3.5',
+    'Sphinx>=1.4.4',
     'sphinx-autobuild',
     'sphinxcontrib-napoleon>=0.4.4',
     'sphinx_rtd_theme',
@@ -30,22 +37,22 @@ docs_require = [
 
 setup(
     name='coalaip',
-    version='0.1.0',
+    version='0.0.1.dev1',
     description="Python reference implementation for COALA IP",
-    long_description=readme + '\n\n' + history,
+    long_description=long_discription,
     author="BigchainDB",
     author_email='dev@bigchaindb.com',
     url='https://github.com/bigchaindb/pycoalaip',
-    packages=['coalaip'],
-    package_dir={'coalaip': 'coalaip'},
+    packages=find_packages(exclude=['tests*']),
     include_package_data=True,
-    install_requires=[],
+    install_requires=install_requires,
     tests_require=tests_require,
     extras_require={
         'test': tests_require,
         'dev': dev_require + tests_require + docs_require,
         'docs': docs_require,
     },
+    test_suite='tests',
     license="Apache Software License 2.0",
     keywords='coalaip',
     classifiers=[
@@ -57,5 +64,4 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
-    test_suite='tests',
 )

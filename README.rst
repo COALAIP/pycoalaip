@@ -20,6 +20,7 @@ pycoalaip
 Python reference implementation for COALA IP
 
 
+* Development Status: Pre-Alpha
 * Free software: Apache Software License 2.0
 * Documentation: https://pycoalaip.readthedocs.io.
 

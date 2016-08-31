@@ -1,16 +1,27 @@
 language: python
 python: 3.5
 
-before_cache:
-  - rm -rf $HOME/.cache/pip/log
-cache:
-  directories:
-    - $HOME/.cache/pip
+env:
+  - TOXENV=py35
+  - TOXENV=flake8
+
+before_install:
+  - source /etc/lsb-release
+  - echo "deb http://download.rethinkdb.com/apt $DISTRIB_CODENAME main" | sudo tee -a /etc/apt/sources.list.d/rethinkdb.list
+  - wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | sudo apt-key add -
+  - sudo apt-get update -qq
 
 install:
-  - pip install -e .[test]
-  - pip install codecov
+  - sudo apt-get install rethinkdb
+  - pip install "git+https://github.com/bigchaindb/bigchaindb.git"
+  - pip install -U codecov tox
 
-script: py.test -v --cov
+before_script:
+  - rethinkdb --daemon
+  - bigchaindb -y configure
+  # Start BigchainDB in the background and ignore any output
+  - bigchaindb start >/dev/null 2>&1 &
+
+script: tox -e ${TOXENV}
 
 after_success: codecov
