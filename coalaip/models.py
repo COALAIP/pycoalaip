@@ -359,6 +359,6 @@ class RightsAssignment(CoalaIpEntity):
 
         super().__init__(data, entity_type=entity_type, plugin=plugin, **kwargs)
 
-    def create(self):
+    def create(self, *args, **kwargs):
         raise EntityError(('RightsAssignments can only created through '
                            'transer transactions.'))
