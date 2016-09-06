@@ -9,6 +9,13 @@ def test_coalaip_expects_plugin():
     with raises(TypeError):
         CoalaIp()
 
+    class NonSubclassPlugin():
+        pass
+
+    plugin = NonSubclassPlugin()
+    with raises(TypeError):
+        CoalaIp(plugin)
+
 
 def test_generate_user(mock_plugin, mock_coalaip, alice_user):
     mock_plugin.generate_user.return_value = alice_user
