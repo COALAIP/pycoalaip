@@ -59,7 +59,17 @@ class CoalaIpEntity:
 
     def __repr__(self):
         return "{name}: {data}".format(name=self.__class__.__name__,
-                                       data=self._data)
+                                       data=self.data)
+
+    @property
+    def data(self):
+        """(dict): the basic data held by this entity model. Does not
+        include any JSON-LD or IPLD specific information.
+        """
+        # TODO: at some point when we have a .from_persist_id() factory,
+        # this should be extended to lazily load the entity's data from the
+        # persistence layer
+        return self._data
 
     @property
     def persist_id(self):
@@ -131,7 +141,7 @@ class CoalaIpEntity:
             data
         """
 
-        json_model = copy(self._data)
+        json_model = copy(self.data)
         json_model['type'] = self._entity_type
         return json_model
 
@@ -143,7 +153,7 @@ class CoalaIpEntity:
             data
         """
 
-        ld_model = copy(self._data)
+        ld_model = copy(self.data)
         ld_model['@context'] = self._ld_context
         ld_model['@type'] = self._entity_type
         ld_model['@id'] = ''  # Specifying an empty @id resolves to the current document
