@@ -13,9 +13,8 @@ class AbstractPlugin(ABC):
     """
 
     @abstractproperty
-    def type():
+    def type(self):
         """A string denoting the type of plugin (e.g. BigchainDB)"""
-        return
 
     @abstractmethod
     def generate_user(self, *args, **kwargs):
@@ -29,7 +28,6 @@ class AbstractPlugin(ABC):
             a representation of a user (e.g. a tuple with the user's
             public and private keypair) on the persistence layer
         """
-        return
 
     @abstractmethod
     def get_status(self, persist_id):
@@ -46,7 +44,6 @@ class AbstractPlugin(ABC):
             :class:`coalaip.exceptions.EntityNotFoundError`: if the
                 entity could not be found on the persistence layer
         """
-        return
 
     @abstractmethod
     def save(self, entity_data, *, user):
@@ -65,7 +62,6 @@ class AbstractPlugin(ABC):
             :class:`coalaip.exceptions.EntityCreationError`: if the
                 entity failed to be created
         """
-        return
 
     @abstractmethod
     def transfer(self, persist_id, transfer_payload, *, from_user, to_user):
@@ -86,4 +82,3 @@ class AbstractPlugin(ABC):
             (str): the id of the transfer action on the persistence
             layer
         """
-        return
