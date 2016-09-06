@@ -42,11 +42,14 @@ class CoalaIpEntity:
                              "'{}' instead.".format(type(plugin))))
 
         if not isinstance(entity_type, str):
-            raise EntityDataError(('The entity type must be provided as a '
+            raise EntityDataError(("The 'entity_type' must be provided as a "
                                    'string to the entity. '
-                                   'Got {} instead.').format(entity_type))
+                                   "Got '{}' instead.".format(entity_type)))
 
-        # FIXME: should I check that data is a dict?
+        if not isinstance(data, dict):
+            raise EntityDataError(("The 'data' must be provided as a dict"
+                                   'to the entity. Given an object of type'
+                                   "'{}' instead.".format(type(data))))
 
         self._data = data
         self._entity_type = entity_type
@@ -266,7 +269,6 @@ class Manifestation(Creation):
                 del data[type_key]
                 break
 
-        # FIXME: apply defaults
         data['isManifestation'] = True
         super().__init__(data, entity_type=entity_type, plugin=plugin, **kwargs)
 
@@ -284,7 +286,6 @@ class Right(CoalaIpTransferrableEntity):
         INSTANTIATION NOTES
         """
 
-        # FIXME: apply defaults
         super().__init__(data, ctx=ctx, entity_type=entity_type, plugin=plugin,
                          **kwargs)
 

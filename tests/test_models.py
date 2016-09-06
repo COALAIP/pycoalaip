@@ -3,13 +3,15 @@
 from pytest import mark, raises
 
 
-def test_entities_raises_on_bad_plugin():
+def test_entities_raise_on_bad_instantiation(mock_plugin):
     from coalaip.models import CoalaIpEntity
+    from coalaip.exceptions import EntityDataError
 
+    # Test that instantiation raises if plugin not subclassed from
+    # AbstractPlugin
     with raises(TypeError):
         CoalaIpEntity(data={}, plugin=None)
 
-    # Test that plugins also need to be subclassed from AbstractPlugin
     class NonSubclassPlugin():
         pass
 
@@ -17,9 +19,25 @@ def test_entities_raises_on_bad_plugin():
     with raises(TypeError):
         CoalaIpEntity(data={}, entity_type='type', plugin=plugin)
 
+    # Test that instantiation raises if data not a dict
+    with raises(EntityDataError):
+        CoalaIpEntity(data=1, entity_type='type', plugin=mock_plugin)
 
-def test_entities_raises_on_creation_error(mock_plugin, base_entity_model,
-                                           alice_user):
+    with raises(EntityDataError):
+        CoalaIpEntity(data=('name', 'id'), entity_type='type',
+                      plugin=mock_plugin)
+
+    # Test that instantiation raises if entity_type not given as string
+    with raises(EntityDataError):
+        CoalaIpEntity(data={}, entity_type=None, plugin=mock_plugin)
+
+    with raises(EntityDataError):
+        CoalaIpEntity(data={}, entity_type={'type': 'type'},
+                      plugin=mock_plugin)
+
+
+def test_entities_raise_on_creation_error(mock_plugin, base_entity_model,
+                                          alice_user):
     from coalaip.exceptions import EntityCreationError
 
     mock_creation_error = 'mock_creation_error'
@@ -30,7 +48,7 @@ def test_entities_raises_on_creation_error(mock_plugin, base_entity_model,
     assert mock_creation_error == excinfo.value.error
 
 
-def test_entities_raises_on_creation_if_already_created(
+def test_entities_raise_on_creation_if_already_created(
         mock_plugin, base_entity_model, alice_user,
         mock_base_entity_create_id):
     from coalaip.exceptions import EntityPreviouslyCreatedError
@@ -68,9 +86,9 @@ def test_entities_get_status(mock_plugin, base_entity_model, alice_user,
     assert status == mock_model_status
 
 
-def test_entities_raises_on_status_if_not_found(mock_plugin, base_entity_model,
-                                                alice_user,
-                                                mock_base_entity_create_id):
+def test_entities_raise_on_status_if_not_found(mock_plugin, base_entity_model,
+                                               alice_user,
+                                               mock_base_entity_create_id):
     from coalaip.exceptions import EntityNotFoundError
 
     # Save the entity
