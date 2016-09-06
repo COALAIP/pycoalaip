@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod, abstractproperty
 class AbstractPlugin(ABC):
     """Abstract interface for all persistence layer plugins.
 
-    Expects the following to be defined:
-        - :attr:`type`
+    Expects the following to be defined by the subclass:
+        - :attr:`type` (as a read-only property)
         - :func:`generate_user`
         - :func:`get_status`
         - :func:`save`
@@ -27,7 +27,7 @@ class AbstractPlugin(ABC):
 
         Returns:
             a representation of a user (e.g. a tuple with the user's
-                public and private keypair) on the persistence layer
+            public and private keypair) on the persistence layer
         """
         return
 
@@ -84,6 +84,6 @@ class AbstractPlugin(ABC):
 
         Returns:
             (str): the id of the transfer action on the persistence
-                layer
+            layer
         """
         return

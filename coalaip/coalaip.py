@@ -1,3 +1,5 @@
+"""High-level functions for interacting with COALA IP entities"""
+
 from collections import namedtuple
 from coalaip.models import Copyright, Manifestation, Work
 from coalaip.plugin import AbstractPlugin
@@ -8,7 +10,7 @@ RegistrationResult = namedtuple('RegistrationResult',
 
 
 class CoalaIp:
-    """Plugin-bound CoalaIP top-level functions.
+    """High-level, plugin-bound COALA IP functions.
 
     Instantiated with an subclass implementing the ledger plugin
     interface (:class:`~coalaip.plugin.AbstractPlugin`) that will
@@ -47,7 +49,7 @@ class CoalaIp:
 
         Returns:
             a representation of a user, based on the persistence layer
-                plugin
+            plugin
         """
 
         return self._plugin.generate_user(*args, **kwargs)
@@ -65,7 +67,7 @@ class CoalaIp:
         Args:
             manifestation_data (dict): a dict holding the model data for
                 the Manifestation
-            user (*, keyword): a user based on the format specified by
+            user (any, keyword): a user based on the format specified by
                 the persistence layer
             existing_work (str|:class:`~coalaip.models.Work`), keyword, optional):
                 the id of an already existing Work that the
@@ -85,15 +87,15 @@ class CoalaIp:
 
         Returns:
             namedtuple: a namedtuple containing the Coypright of the
-                registered Manifestation, the registered Manifestation,
-                and the Work (either the automatically created Work or
-                the given 'existing_work')::
+            registered Manifestation, the registered Manifestation,
+            and the Work (either the automatically created Work or
+            the given 'existing_work')::
 
-                    (
-                        'copyright': (:class:`~coalaip.models.Copyright`),
-                        'manifestation': (:class:`~coalaip.models.Manifestation`),
-                        'work': (:class:`~coalaip.models.Work`),
-                    )
+                (
+                    'copyright': (:class:`~coalaip.models.Copyright`),
+                    'manifestation': (:class:`~coalaip.models.Manifestation`),
+                    'work': (:class:`~coalaip.models.Work`),
+                )
 
         Raises:
             :class:`EntityCreationError`: if the manifestation, its
@@ -145,7 +147,7 @@ class CoalaIp:
                 Right
             from_copyright (str): the id of the Copyright that this
                 Right should be derived from
-            user (*, keyword): a user based on the format specified by
+            user (any, keyword): a user based on the format specified by
                 the persistence layer
             data_format (str, keyword, optional): the data format of the
                 created Right; must be one of:
@@ -166,9 +168,9 @@ class CoalaIp:
             right (str): the id of the Right to transfer
             rights_assignment_data (dict): a dict holding the model data
                 for the RightsAssignment
-            from_user (*, keyword): a user based on the format specified
-                by the persistence layer
-            to_user (*, keyword): a user based on the format specified
+            from_user (any, keyword): a user based on the format
+                specified by the persistence layer
+            to_user (any, keyword): a user based on the format specified
                 by the persistence layer
             data_format (str, keyword, optional): the data format of the
                 saved RightsAssignment; must be one of:

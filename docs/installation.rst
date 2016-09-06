@@ -32,7 +32,7 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/bigchaindb/coalaip
+    $ git clone git://github.com/bigchaindb/pycoalaip
 
 Once you have a copy of the source, you can install it with:
 
