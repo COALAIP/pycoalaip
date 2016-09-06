@@ -1,0 +1,7 @@
+# Required dependencies for installation based on the setup.py file.
+#
+# NOTE: Pyup will automatically update these, but YOU will have to upgrade the
+# dependencies as necessary in setup.py. These are NOT used for anything other
+# than enabling notifications for outdated dependencies.
+
+PyLD>=0.7.1
