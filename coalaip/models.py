@@ -268,7 +268,7 @@ class Manifestation(Creation):
 
         if not isinstance(manifestation_of, str):
             raise EntityDataError(("'manifestationOfWork' must be given as a "
-                                   "string in the 'data' of Copyrights. "
+                                   "string in the 'data' of Manifestations. "
                                    "Given '{}' instead.".format(manifestation_of)))
 
         # If the entity type is already specified as part of the data, use that
