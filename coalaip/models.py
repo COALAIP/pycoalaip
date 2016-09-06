@@ -23,8 +23,8 @@ class CoalaIpEntity:
     """Base class of all COALA IP entity models.
 
     Provides base functionality for all COALA IP entities, including
-    entity creation (:method:`~CoalaIpEntity.create`) and, if necessary,
-    retrival of their status (:method:`~CoalaIpEntity.get_status`), on
+    entity creation (:meth:`~CoalaIpEntity.create`) and, if necessary,
+    retrival of their status (:meth:`~CoalaIpEntity.get_status`), on
     the backing persistence layer provided by the given ledger plugin.
     """
 
@@ -109,7 +109,7 @@ class CoalaIpEntity:
 
         Returns:
             the status of the entity, as defined by the persistence
-                layer, or None if the entity is not yet persisted.
+            layer, or None if the entity is not yet persisted.
 
         Raises:
             :class:`EntityNotFoundError`: if the entity is persisted,
@@ -125,7 +125,7 @@ class CoalaIpEntity:
 
         Returns:
             dict: a JSON-serializable dict representing this entity's
-                data
+            data
         """
 
         json_model = copy(self._data)
@@ -137,7 +137,7 @@ class CoalaIpEntity:
 
         Returns:
             dict: a JSON-LD-serializable dict representing this entity's
-                data
+            data
         """
 
         ld_model = copy(self._data)
@@ -169,7 +169,7 @@ class CoalaIpTransferrableEntity(CoalaIpEntity):
     """Base class for transferable COALA IP entity models.
 
     Provides functionality for transferrable entities through
-    (:method:`~CoalaIpTransferrableEntity.transfer`)
+    (:meth:`~CoalaIpTransferrableEntity.transfer`)
     """
 
     def transfer(self, transfer_payload=None, *, from_user, to_user):

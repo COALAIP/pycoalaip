@@ -16,8 +16,12 @@ Contents:
    readme
    installation
    usage
+   plugin
+   libref
+   aboutthedocs
    contributing
-   authorshistory
+   authors
+   history
 
 Indices and tables
 ==================

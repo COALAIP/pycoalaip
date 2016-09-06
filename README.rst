@@ -8,6 +8,9 @@ pycoalaip
 .. image:: https://img.shields.io/travis/bigchaindb/pycoalaip.svg
         :target: https://travis-ci.org/bigchaindb/pycoalaip
 
+.. image:: https://img.shields.io/codecov/c/github/bigchaindb/pycoalaip/master.svg
+    :target: https://codecov.io/github/bigchaindb/pycoalaip?branch=master
+
 .. image:: https://readthedocs.org/projects/pycoalaip/badge/?version=latest
         :target: https://pycoalaip.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
@@ -17,7 +20,7 @@ pycoalaip
      :alt: Updates
 
 
-Python reference implementation for COALA IP
+Python reference implementation for COALA IP.
 
 
 * Development Status: Pre-Alpha

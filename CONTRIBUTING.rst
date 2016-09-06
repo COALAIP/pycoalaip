@@ -71,7 +71,7 @@ Ready to contribute? Here's how to set up `coalaip` for local development.
 
     $ mkvirtualenv coalaip
     $ cd coalaip/
-    $ python setup.py develop
+    $ pip install -r requirements_dev.txt
 
 4. Create a branch for local development::
 
@@ -83,7 +83,7 @@ Ready to contribute? Here's how to set up `coalaip` for local development.
    the tests, including testing other Python versions with tox::
 
     $ flake8 coalaip tests
-    $ python setup.py test or pytest
+    $ pytest
     $ tox
 
    To get flake8 and tox, just pip install them into your virtualenv.

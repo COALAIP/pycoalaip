@@ -1,5 +1,4 @@
-"""Custom exceptions for COALA IP.
-"""
+"""Custom exceptions for COALA IP"""
 
 
 class EntityError(Exception):
@@ -16,6 +15,9 @@ class EntityCreationError(EntityError):
 
     @property
     def error(self):
+        """Original error that caused the creation of the entity on the
+        persistence layer to fail
+        """
         return self.args[0]
 
 
@@ -43,4 +45,7 @@ class EntityPreviouslyCreatedError(EntityError):
 
     @property
     def existing_id(self):
+        """Currently existing ID of the entity on the persistence
+        layer.
+        """
         return self.args[0]
