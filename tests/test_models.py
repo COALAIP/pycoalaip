@@ -66,6 +66,11 @@ def test_entities_raise_on_creation_if_already_created(
     assert mock_base_entity_create_id == excinfo.value.existing_id
 
 
+def test_entities_plugin_type(mock_plugin, base_entity_model):
+    plugin_type = base_entity_model.plugin_type
+    assert plugin_type == mock_plugin.type
+
+
 def test_entities_have_none_status_if_not_persisted(mock_plugin,
                                                     base_entity_model):
     status = base_entity_model.get_status()
