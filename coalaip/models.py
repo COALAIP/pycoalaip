@@ -28,10 +28,29 @@ class CoalaIpEntity:
     the backing persistence layer provided by the given ledger plugin.
     """
 
-    def __init__(self, data, *, ctx=DEFAULT_LD_CONTEXT, entity_type, plugin):
+    def __init__(self, data, *, entity_type, ctx=DEFAULT_LD_CONTEXT, plugin):
         """Initialize a :class:`~coalaip.models.CoalaIpEntity` instance.
 
-        INSTANTIATION NOTES
+        Args:
+            data (dict): a dict holding the model data for the entity
+            entity_type (str, keyword): the "@type" of the entity. Will
+                be inserted into the JSON-LD and IPLD representations
+                as-is, and as "type" in JSON representations.
+            ctx (str|str[]|dict[], keyword, optional): the context for
+                the entity as either a string URL or array of string
+                URLs or dictionaries. See the `JSON-LD spec on contexts
+                <https://www.w3.org/TR/json-ld/#the-context>`_ for more
+                information.
+                Defaults to adding COALA IP and schema.org to the
+                context.
+            plugin (Plugin, keyword): the persistence layer plugin
+
+        Raises:
+            :class:`TypeError`: if the given 'plugin' does not subclass
+                :class:`~coalaip.plugin.AbstractPlugin`
+            :class:`~coalaip.exceptions.EntityDataError`: if the given
+                'data' is not a dict or the given 'entity_type' is not
+                a string.
         """
 
         if not isinstance(plugin, AbstractPlugin):
@@ -100,13 +119,13 @@ class CoalaIpEntity:
             str: the id of this entity on the persistence layer
 
         Raises:
-            :class:`EntityCreationError`: if an error occurred during
-                the creation of this entity that caused it to \*NOT\* be
-                persisted. Contains the original error from the
-                persistence layer, if available.
-            :class:`EntityPreviouslyCreatedError`: if the entity has
-                already been persisted. Should contain the existing id
-                of the entity on the persistence layer.
+            :class:`~coalaip.exceptions.EntityCreationError`: if an
+                error occurred during the creation of this entity that
+                caused it to \*NOT\* be persisted. Contains the original
+                error from the persistence layer, if available.
+            :class:`~coalaip.exceptions.EntityPreviouslyCreatedError`:
+                if the entity has already been persisted. Should contain
+                the existing id of the entity on the persistence layer.
         """
 
         if self._persist_id:
@@ -125,8 +144,9 @@ class CoalaIpEntity:
             layer, or None if the entity is not yet persisted.
 
         Raises:
-            :class:`EntityNotFoundError`: if the entity is persisted,
-                but could not be found on the persistence layer
+            :class:`~coaalip.exceptions.EntityNotFoundError`: if the
+                entity is persisted, but could not be found on the
+                persistence layer
         """
 
         if self._persist_id is None:
@@ -197,6 +217,11 @@ class CoalaIpTransferrableEntity(CoalaIpEntity):
                 persistence layer
 
         Returns:
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityNotYetPersistedError`:
+                if the entity being transferred has not yet been
+                persisted to the backing persistence layer
         """
 
         if self._persist_id is None:
@@ -208,15 +233,24 @@ class CoalaIpTransferrableEntity(CoalaIpEntity):
 
 
 class Creation(CoalaIpEntity):
+    """COALA IP's Creation entity.
+
+    Base class for :class:`coalaip.models.Work`s and
+    :class:`coalaip.models.Manifestation`s.
     """
 
-    INSTANTIATION NOTES
-    """
-
-    def __init__(self, data, *, entity_type='CreativeWork', plugin, **kwargs):
+    def __init__(self, data, *args, **kwargs):
         """Initialize a :class:`~coalaip.models.Creation` instance
 
-        INSTANTIATION NOTES
+        Args:
+            data (dict): a dict holding the model data for the
+                Creation. Must include at least a ``name`` key.
+            *args: see :class:`~coalaip.models.CoalaIpEntity`
+            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the given
+                'data' does not include a ``name`` key
         """
 
         creation_name = data.get('name')
@@ -227,19 +261,36 @@ class Creation(CoalaIpEntity):
                                    "'data' of Creations (Works and Manifestations). "
                                    "Given '{}' instead.".format(creation_name)))
 
-        super().__init__(data, entity_type=entity_type, plugin=plugin, **kwargs)
+        super().__init__(data, *args, **kwargs)
 
 
 class Work(Creation):
+    """COALA IP's Work entity.
+
+    A distinct, abstract Creation whose existence is revealed through
+    one or more :class:`~coalaip.models.Manifestation`s.
     """
 
-    INSTANTIATION NOTES
-    """
+    def __init__(self, data, *args, **kwargs):
+        """Initialize a :class:`~coalaip.models.Work` instance.
 
-    def __init__(self, data, *, plugin, **kwargs):
-        """Initialize a :class:`~coalaip.models.Work` instance
+        :class:`~coalaip.models.Work`s are always of ``entity_type``
+        'CreativeWork'.
 
-        INSTANTIATION NOTES
+        See also :class:`~coalaip.models.Creation`.
+
+        Args:
+            data (dict): a dict holding the model data for the Work.
+                Must not include keys that indicate the model is a
+                :class:`~coalaip.models.Manifestation` (e.g.
+                ``manifestationOfWork`` or ``isManifestation == True``).
+            *args: see :class:`~coalaip.models.CoalaIpEntity`
+            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the given
+                'data' includes a ``manifestationOfWork`` key or
+                includes a ``isManifestation`` key whose value is True.
         """
 
         if 'manifestationOfWork' in data:
@@ -249,19 +300,35 @@ class Work(Creation):
             raise EntityDataError(("'isManifestation' must not be True if "
                                    "given in the 'data' of Works"))
 
-        super().__init__(data, plugin=plugin, **kwargs)
+        super().__init__(data, entity_type='CreativeWork', *args, **kwargs)
 
 
 class Manifestation(Creation):
+    """COALA IP's Manifestation entity.
+
+    A perceivable manifestation of a :class:`~coalaip.models.Work`.
     """
 
-    INSTANTIATION NOTES
-    """
-
-    def __init__(self, data, *, entity_type='CreativeWork', plugin, **kwargs):
+    def __init__(self, data, *args, entity_type='CreativeWork', **kwargs):
         """Initialize a :class:`~coalaip.models.Manifestation` instance
 
-        INSTANTIATION NOTES
+        See also :class:`~coalaip.models.Creation`.
+
+        Args:
+            data (dict): a dict holding the model data for the
+                Manifestation. Must include a ``manifestationOfWork``
+                key. If an ``type`` or ``@type`` key is provided in the
+                'data', this type will be used as the ``entity_type``
+                rather than the 'entity_type' keyword argument.
+            entity_type (str, keyword, optional): the "@type" of the
+                Manifestation.
+                Defaults to 'CreativeWork'.
+            *args: see :class:`~coalaip.models.CoalaIpEntity`
+            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the given
+                'data' does not include a ``manifestationOfWork`` key
         """
 
         manifestation_of = data.get('manifestationOfWork')
@@ -280,23 +347,35 @@ class Manifestation(Creation):
                 break
 
         data['isManifestation'] = True
-        super().__init__(data, entity_type=entity_type, plugin=plugin, **kwargs)
+        super().__init__(data, entity_type=entity_type, *args, **kwargs)
 
 
 class Right(CoalaIpTransferrableEntity):
+    """COALA IP's Right entity. Transferrable.
+
+    A statement of entitlement (i.e. "right") to do something in
+    relation to a :class:`~coalaip.models.Work` or
+    :class:`~coalaip.models.Manifestation`.
     """
 
-    INSTANTIATION NOTES
-    """
-
-    def __init__(self, data, *, entity_type='Right', ctx=context_urls.COALAIP,
-                 plugin, **kwargs):
+    def __init__(self, data, *args, entity_type='Right',
+                 ctx=context_urls.COALAIP, **kwargs):
         """Initialize a :class:`~coalaip.models.Right` instance
 
-        INSTANTIATION NOTES
+        Args:
+            data (dict): a dict holding the model data for the Right
+            entity_type (str, keyword, optional): the "@type" of the
+                Manifestation.
+                Defaults to 'Right'.
+            ctx (str|str[]|dict[], keyword, optional): the context for
+                the Right.
+                Defaults to only only COALA IP, as Rights are not
+                dependent on schema.org.
+            *args: see :class:`~coalaip.models.CoalaIpEntity`
+            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
         """
 
-        super().__init__(data, ctx=ctx, entity_type=entity_type, plugin=plugin,
+        super().__init__(data, entity_type=entity_type, ctx=ctx, *args,
                          **kwargs)
 
     def transfer(self, rights_assignment_data=None, *, from_user, to_user,
@@ -332,15 +411,27 @@ class Right(CoalaIpTransferrableEntity):
 
 
 class Copyright(Right):
+    """COALA IP's Copyright entity. Transferrable.
+
+    The full entitlement of Copyright to a :class:`~coalaip.models.Work`
+    or :class:`~coalaip.models.Manifestation`.
     """
 
-    INSTANTIATION NOTES
-    """
-
-    def __init__(self, data, *, entity_type='Copyright', plugin, **kwargs):
+    def __init__(self, data, *args, **kwargs):
         """Initialize a :class:`~coalaip.models.Copyright` instance
 
-        INSTANTIATION NOTES
+        :class:`~coalaip.models.Copyright`s are always of
+        ``entity_type`` 'Copyright'.
+
+        Args:
+            data (dict): a dict holding the model data for the
+                Copyright. Must include at least a ``rightsOf`` key.
+            *args: see :class:`~coalaip.models.CoalaIpEntity`
+            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the given
+                'data' does not include a ``rightsOf`` key
         """
 
         rights_of = data.get('rightsOf')
@@ -350,42 +441,53 @@ class Copyright(Right):
                                    "the 'data' of Copyrights. "
                                    "Given '{}' instead.".format(rights_of)))
 
-        super().__init__(data, entity_type=entity_type, plugin=plugin, **kwargs)
+        super().__init__(data, entity_type='Copyright', *args, **kwargs)
 
 
 class GenericDerivedRight(Right):
     """
-
-    INSTANTIATION NOTES
+    TODO
     """
 
-    def __init__(self, data, *, entity_type='GenericDerivedRight', plugin,
+    def __init__(self, data, *args, entity_type='GenericDerivedRight',
                  **kwargs):
         """Initialize a :class:`~coalaip.models.GenericDerivedRight`
         instance
 
-        INSTANTIATION NOTES
+        TODO
         """
 
-        super().__init__(data, entity_type=entity_type, plugin=plugin, **kwargs)
+        super().__init__(data, entity_type=entity_type, *args, **kwargs)
 
 
 class RightsAssignment(CoalaIpEntity):
+    """COALA IP's RightsAssignment entity.
+
+    The assignment (e.g. transfer) of a :class:`~coalaip.models.Right`
+    to someone.
+
+    RightsAssignments may only be persisted in the underlying
+    persistence layer through transfer operations, and hence cannot be
+    created normally through ``.create()``.
     """
 
-    INSTANTIATION NOTES
-    """
-
-    def __init__(self, data, *, entity_type='RightsTransferAction', plugin,
-                 **kwargs):
+    def __init__(self, data, *args, **kwargs):
         """Initialize a :class:`~coalaip.models.RightsAssignment`
         instance
 
-        INSTANTIATION NOTES
+        Args:
+            data (dict): a dict holding the model data for the
+                RightsAssignment
+            *args: see :class:`~coalaip.models.CoalaIpEntity`
+            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
         """
 
-        super().__init__(data, entity_type=entity_type, plugin=plugin, **kwargs)
+        super().__init__(data, entity_type='RightsTransferAction', *args,
+                         **kwargs)
 
     def create(self, *args, **kwargs):
+        """Removes the ability to persist RightsAssignments normally.
+        Raises :class:`~coalaip.exceptions.EntityError` if called.
+        """
         raise EntityError(('RightsAssignments can only created through '
                            'transer transactions.'))

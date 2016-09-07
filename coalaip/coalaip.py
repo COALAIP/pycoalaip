@@ -99,10 +99,10 @@ class CoalaIp:
                 )
 
         Raises:
-            :class:`EntityCreationError`: if the manifestation, its
-                copyright, or the automatically created work (if no
-                existing work is given) fail to be created on the
-                persistence layer
+            :class:`~coalaip.exceptions.EntityCreationError`: if the
+                manifestation, its copyright, or the automatically
+                created work (if no existing work is given) fail to be
+                created on the persistence layer
         """
 
         # TODO: in the future, we may want to consider blocking (or asyncing) until
