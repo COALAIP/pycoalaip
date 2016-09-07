@@ -109,6 +109,15 @@ def test_work_init(mock_plugin, work_data, work_json,
     assert work.to_jsonld() == work_jsonld
 
 
+def test_work_init_raises_if_no_name(mock_plugin, work_data):
+    from coalaip.models import Work
+    from coalaip.exceptions import EntityDataError
+
+    del work_data['name']
+    with raises(EntityDataError):
+        Work(work_data, plugin=mock_plugin)
+
+
 def test_work_init_raises_if_manifestation(mock_plugin, work_data):
     from copy import copy
     from coalaip.models import Work
@@ -192,6 +201,18 @@ def test_manifestation_init_with_type(mock_plugin, manifestation_data_factory,
     assert manifestation.persist_id is None
     assert manifestation.to_json() == manifestation_json
     assert manifestation.to_jsonld() == manifestation_jsonld
+
+
+def test_manifestation_init_raises_if_no_name(mock_plugin,
+                                              manifestation_data_factory):
+    from coalaip.models import Manifestation
+    from coalaip.exceptions import EntityDataError
+
+    manifestation_data = manifestation_data_factory()
+    del manifestation_data['name']
+
+    with raises(EntityDataError):
+        Manifestation(manifestation_data, plugin=mock_plugin)
 
 
 def test_manifestation_init_raises_without_manifestation_of(
