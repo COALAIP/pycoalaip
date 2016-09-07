@@ -249,5 +249,5 @@ def persisted_jsonld_registration(mock_plugin, mock_coalaip,
 
     return mock_coalaip.register_manifestation(
         manifestation_model,
-        user=alice_user
+        user=alice_user,
     )

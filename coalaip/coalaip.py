@@ -1,6 +1,7 @@
 """High-level functions for interacting with COALA IP entities"""
 
 from collections import namedtuple
+from coalaip.exceptions import EntityNotYetPersistedError
 from coalaip.models import Copyright, Manifestation, Work
 from coalaip.plugin import AbstractPlugin
 
@@ -69,7 +70,7 @@ class CoalaIp:
                 the Manifestation
             user (any, keyword): a user based on the format specified by
                 the persistence layer
-            existing_work (str|:class:`~coalaip.models.Work`), keyword, optional):
+            existing_work (:class:`~coalaip.models.Work`, keyword, optional):
                 the id of an already existing Work that the
                 Manifestation is derived from.
                 If specified, the 'work_data' parameter is ignored.
@@ -98,10 +99,10 @@ class CoalaIp:
                 )
 
         Raises:
-            :class:`EntityCreationError`: if the manifestation, its
-                copyright, or the automatically created work (if no
-                existing work is given) fail to be created on the
-                persistence layer
+            :class:`~coalaip.exceptions.EntityCreationError`: if the
+                manifestation, its copyright, or the automatically
+                created work (if no existing work is given) fail to be
+                created on the persistence layer
         """
 
         # TODO: in the future, we may want to consider blocking (or asyncing) until
@@ -113,19 +114,20 @@ class CoalaIp:
             create_kwargs['data_format'] = data_format
 
         work = existing_work
-        if work is None:
+        if existing_work is None:
             if work_data is None:
                 work_data = {'name': manifestation_data.get('name')}
             work = Work(work_data, plugin=self._plugin)
             work.create(user, **create_kwargs)
-        elif not isinstance(work, Work):
-            raise ValueError(("'existing_work' argument to "
-                              'register_manifestation() must be a Work. '
-                              "Given an instance of '{}'".format(type(work))))
-        elif work.persist_id is not None:
-            raise TypeError(("Work given as 'existing_work' argument to "
-                             'register_manifestation() must have already been '
-                             'created'))
+        elif not isinstance(existing_work, Work):
+            raise TypeError(("'existing_work' argument to "
+                             'register_manifestation() must be a Work. '
+                             "Given an instance of '{}'".format(type(work))))
+        elif existing_work.persist_id is None:
+            raise EntityNotYetPersistedError(("Work given as 'existing_work' "
+                                              'to register_manifestation() '
+                                              'must be already created on the '
+                                              'backing persistence layer.'))
         work_id = work.persist_id
 
         manifestation_data['manifestationOfWork'] = work_id
@@ -145,8 +147,8 @@ class CoalaIp:
         Args:
             right_data (dict): a dict holding the model data for the
                 Right
-            from_copyright (str): the id of the Copyright that this
-                Right should be derived from
+            from_copyright (:class:`~coalaip.models.Copyright`): the id
+                of the Copyright that this Right should be derived from
             user (any, keyword): a user based on the format specified by
                 the persistence layer
             data_format (str, keyword, optional): the data format of the

@@ -3,13 +3,15 @@
 from pytest import mark, raises
 
 
-def test_entities_raises_on_bad_plugin():
+def test_entities_raise_on_bad_instantiation(mock_plugin):
     from coalaip.models import CoalaIpEntity
+    from coalaip.exceptions import EntityDataError
 
+    # Test that instantiation raises if plugin not subclassed from
+    # AbstractPlugin
     with raises(TypeError):
         CoalaIpEntity(data={}, plugin=None)
 
-    # Test that plugins also need to be subclassed from AbstractPlugin
     class NonSubclassPlugin():
         pass
 
@@ -17,9 +19,25 @@ def test_entities_raises_on_bad_plugin():
     with raises(TypeError):
         CoalaIpEntity(data={}, entity_type='type', plugin=plugin)
 
+    # Test that instantiation raises if data not a dict
+    with raises(EntityDataError):
+        CoalaIpEntity(data=1, entity_type='type', plugin=mock_plugin)
 
-def test_entities_raises_on_creation_error(mock_plugin, base_entity_model,
-                                           alice_user):
+    with raises(EntityDataError):
+        CoalaIpEntity(data=('name', 'id'), entity_type='type',
+                      plugin=mock_plugin)
+
+    # Test that instantiation raises if entity_type not given as string
+    with raises(EntityDataError):
+        CoalaIpEntity(data={}, entity_type=None, plugin=mock_plugin)
+
+    with raises(EntityDataError):
+        CoalaIpEntity(data={}, entity_type={'type': 'type'},
+                      plugin=mock_plugin)
+
+
+def test_entities_raise_on_creation_error(mock_plugin, base_entity_model,
+                                          alice_user):
     from coalaip.exceptions import EntityCreationError
 
     mock_creation_error = 'mock_creation_error'
@@ -30,7 +48,7 @@ def test_entities_raises_on_creation_error(mock_plugin, base_entity_model,
     assert mock_creation_error == excinfo.value.error
 
 
-def test_entities_raises_on_creation_if_already_created(
+def test_entities_raise_on_creation_if_already_created(
         mock_plugin, base_entity_model, alice_user,
         mock_base_entity_create_id):
     from coalaip.exceptions import EntityPreviouslyCreatedError
@@ -46,6 +64,11 @@ def test_entities_raises_on_creation_if_already_created(
         base_entity_model.create(alice_user)
 
     assert mock_base_entity_create_id == excinfo.value.existing_id
+
+
+def test_entities_plugin_type(mock_plugin, base_entity_model):
+    plugin_type = base_entity_model.plugin_type
+    assert plugin_type == mock_plugin.type
 
 
 def test_entities_have_none_status_if_not_persisted(mock_plugin,
@@ -68,9 +91,9 @@ def test_entities_get_status(mock_plugin, base_entity_model, alice_user,
     assert status == mock_model_status
 
 
-def test_entities_raises_on_status_if_not_found(mock_plugin, base_entity_model,
-                                                alice_user,
-                                                mock_base_entity_create_id):
+def test_entities_raise_on_status_if_not_found(mock_plugin, base_entity_model,
+                                               alice_user,
+                                               mock_base_entity_create_id):
     from coalaip.exceptions import EntityNotFoundError
 
     # Save the entity
@@ -89,6 +112,15 @@ def test_work_init(mock_plugin, work_data, work_json,
     assert work.persist_id is None
     assert work.to_json() == work_json
     assert work.to_jsonld() == work_jsonld
+
+
+def test_work_init_raises_if_no_name(mock_plugin, work_data):
+    from coalaip.models import Work
+    from coalaip.exceptions import EntityDataError
+
+    del work_data['name']
+    with raises(EntityDataError):
+        Work(work_data, plugin=mock_plugin)
 
 
 def test_work_init_raises_if_manifestation(mock_plugin, work_data):
@@ -174,6 +206,18 @@ def test_manifestation_init_with_type(mock_plugin, manifestation_data_factory,
     assert manifestation.persist_id is None
     assert manifestation.to_json() == manifestation_json
     assert manifestation.to_jsonld() == manifestation_jsonld
+
+
+def test_manifestation_init_raises_if_no_name(mock_plugin,
+                                              manifestation_data_factory):
+    from coalaip.models import Manifestation
+    from coalaip.exceptions import EntityDataError
+
+    manifestation_data = manifestation_data_factory()
+    del manifestation_data['name']
+
+    with raises(EntityDataError):
+        Manifestation(manifestation_data, plugin=mock_plugin)
 
 
 def test_manifestation_init_raises_without_manifestation_of(
