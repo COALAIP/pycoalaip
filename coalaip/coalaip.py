@@ -84,10 +84,11 @@ class CoalaIp:
                 ``data_format``).
 
         Returns:
-            namedtuple: a namedtuple containing the Coypright of the
+            :class:`~coalaip.coalaip.RegistrationResult`: a
+            :obj:`collections.namedtuple` containing the Coypright of the
             registered Manifestation, the registered Manifestation,
             and the Work (either the automatically created Work or
-            the given 'existing_work')::
+            the given 'existing_work') as named fields::
 
                 (
                     'copyright': (:class:`~coalaip.models.Copyright`),
