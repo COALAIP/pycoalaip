@@ -57,8 +57,7 @@ class CoalaIp:
 
     # TODO: could probably have a 'safe' check to make sure the entities are actually created
     def register_manifestation(self, manifestation_data, *, user,
-                               existing_work=None, work_data=None,
-                               data_format=None):
+                               existing_work=None, work_data=None, **kwargs):
         """Register a Manifestation and automatically assign its
         corresponding Copyright to the given 'user'.
 
@@ -80,11 +79,9 @@ class CoalaIp:
                 specified.
                 If not specified, the Work will be created using only the
                 name of the Manifestation.
-            data_format (str, keyword, optional): the data format of the
-                created entities; must be one of:
-                    - 'jsonld' (default)
-                    - 'json'
-                    - 'ipld'
+            **kwargs: keyword arguments passed through to each model's
+                :meth:`~coalaip.models.CoalaIpEntity.create` (e.g.
+                ``data_format``).
 
         Returns:
             namedtuple: a namedtuple containing the Coypright of the
@@ -108,17 +105,12 @@ class CoalaIp:
         # TODO: in the future, we may want to consider blocking (or asyncing) until
         # we confirm that an entity has actually been created
 
-        # FIXME: is there a better way to do this? i.e. undefined in javascript
-        create_kwargs = {}
-        if data_format is not None:
-            create_kwargs['data_format'] = data_format
-
         work = existing_work
         if existing_work is None:
             if work_data is None:
                 work_data = {'name': manifestation_data.get('name')}
             work = Work(work_data, plugin=self._plugin)
-            work.create(user, **create_kwargs)
+            work.create(user, **kwargs)
         elif not isinstance(existing_work, Work):
             raise TypeError(("'existing_work' argument to "
                              'register_manifestation() must be a Work. '
@@ -132,11 +124,11 @@ class CoalaIp:
 
         manifestation_data['manifestationOfWork'] = work_id
         manifestation = Manifestation(manifestation_data, plugin=self._plugin)
-        manifestation.create(user, **create_kwargs)
+        manifestation.create(user, **kwargs)
 
         copyright_data = {'rightsOf': manifestation.persist_id}
         manifestation_copyright = Copyright(copyright_data, plugin=self._plugin)
-        manifestation_copyright.create(user, **create_kwargs)
+        manifestation_copyright.create(user, **kwargs)
 
         return RegistrationResult(manifestation_copyright, manifestation, work)
 
