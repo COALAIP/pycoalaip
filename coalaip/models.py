@@ -104,7 +104,7 @@ class CoalaIpEntity:
 
     def create(self, user, data_format='jsonld'):
         """Create (i.e. persist) this entity to the backing persistence
-        layer
+        layer.
 
         Args:
             user (any): a user based on the model specified by the
@@ -180,7 +180,7 @@ class CoalaIpEntity:
         return ld_model
 
     def to_ipld(self):
-        """Output this entity's data as an IPLD string"""
+        """Output this entity's data as an IPLD string."""
 
         raise NotImplementedError('to_ipld() has not been implemented yet')
 
@@ -381,7 +381,7 @@ class Right(CoalaIpTransferrableEntity):
     def transfer(self, rights_assignment_data=None, *, from_user, to_user,
                  rights_assignment_format='jsonld'):
         """Transfer this Right to another owner on the backing
-        persistence layer
+        persistence layer.
 
         Args:
             rights_assignment_data (dict): a dict holding the model data for
