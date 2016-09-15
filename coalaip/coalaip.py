@@ -100,6 +100,11 @@ class CoalaIp:
                 )
 
         Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the
+                :attr:`manifestation_data` or :attr:`work_data` contain
+                invalid or are missing required properties.
+            :class:`~coalaip.exceptions.EntityNotYetPersistedError`: if the
+                :attr:`existing_work` has not been persisted yet
             :class:`~coalaip.exceptions.EntityCreationError`: if the
                 manifestation, its copyright, or the automatically
                 created work (if no existing work is given) fail to be
