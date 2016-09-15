@@ -61,14 +61,14 @@ class CoalaIpEntity:
                              "'{}' instead.".format(type(plugin))))
 
         if not isinstance(entity_type, str):
-            raise EntityDataError(("The 'entity_type' must be provided as a "
-                                   'string to the entity. '
-                                   "Got '{}' instead.".format(entity_type)))
+            raise EntityDataError(("'entity_type' must be provided as a "
+                                   'string to CoalaIpEntities. '
+                                   "Given '{}'".format(entity_type)))
 
         if not isinstance(data, dict):
-            raise EntityDataError(("The 'data' must be provided as a dict"
-                                   'to the entity. Given an object of type'
-                                   "'{}' instead.".format(type(data))))
+            raise EntityDataError(("'data' must be provided as a dict"
+                                   'to CoalaIpEntities. Given '
+                                   "'{}'".format(data)))
 
         self._data = data
         self._entity_type = entity_type
@@ -104,7 +104,7 @@ class CoalaIpEntity:
 
     def create(self, user, data_format='jsonld'):
         """Create (i.e. persist) this entity to the backing persistence
-        layer
+        layer.
 
         Args:
             user (any): a user based on the model specified by the
@@ -180,7 +180,7 @@ class CoalaIpEntity:
         return ld_model
 
     def to_ipld(self):
-        """Output this entity's data as an IPLD string"""
+        """Output this entity's data as an IPLD string."""
 
         raise NotImplementedError('to_ipld() has not been implemented yet')
 
@@ -250,16 +250,15 @@ class Creation(CoalaIpEntity):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' does not include a ``name`` key
+                'data' dict does not contain a string value for ``name``
         """
 
         creation_name = data.get('name')
 
         if not isinstance(creation_name, str):
-            # Proper error type... is ValueError right? Or KeyError? Or both?
             raise EntityDataError(("'name' must be given as a string in the "
-                                   "'data' of Creations (Works and Manifestations). "
-                                   "Given '{}' instead.".format(creation_name)))
+                                   "'data' of a Creation. Given "
+                                   "'{}'".format(creation_name)))
 
         super().__init__(data, *args, **kwargs)
 
@@ -289,8 +288,8 @@ class Work(Creation):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' includes a ``manifestationOfWork`` key or
-                includes a ``isManifestation`` key whose value is True.
+                'data' dict contains ``manifestationOfWork`` or a True
+                value for ``isManifestation``.
         """
 
         if 'manifestationOfWork' in data:
@@ -328,15 +327,16 @@ class Manifestation(Creation):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' does not include a ``manifestationOfWork`` key
+                'data' dict does not contain a string value for
+                ``manifestationOfWork``
         """
 
         manifestation_of = data.get('manifestationOfWork')
 
         if not isinstance(manifestation_of, str):
             raise EntityDataError(("'manifestationOfWork' must be given as a "
-                                   "string in the 'data' of Manifestations. "
-                                   "Given '{}' instead.".format(manifestation_of)))
+                                   "string in the 'data' of a Manifestation. "
+                                   "Given '{}'".format(manifestation_of)))
 
         # If the entity type is already specified as part of the data, use that
         # instead of 'CreativeWork'
@@ -381,7 +381,7 @@ class Right(CoalaIpTransferrableEntity):
     def transfer(self, rights_assignment_data=None, *, from_user, to_user,
                  rights_assignment_format='jsonld'):
         """Transfer this Right to another owner on the backing
-        persistence layer
+        persistence layer.
 
         Args:
             rights_assignment_data (dict): a dict holding the model data for
@@ -431,15 +431,15 @@ class Copyright(Right):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' does not include a ``rightsOf`` key
+                'data' does not contain a string value for ``rightsOf``
         """
 
         rights_of = data.get('rightsOf')
 
         if not isinstance(rights_of, str):
             raise EntityDataError(("'rightsOf' must be given as a string in "
-                                   "the 'data' of Copyrights. "
-                                   "Given '{}' instead.".format(rights_of)))
+                                   "the 'data' of a Copyright. Given "
+                                   "'{}'".format(rights_of)))
 
         super().__init__(data, entity_type='Copyright', *args, **kwargs)
 

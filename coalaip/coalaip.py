@@ -46,7 +46,7 @@ class CoalaIp:
         Args:
             *args: argument list passed to the plugin's generate_user()
             **kwargs: keyword arguments passed to the plugin's
-                generate_user()
+                ``generate_user()``
 
         Returns:
             a representation of a user, based on the persistence layer
@@ -59,35 +59,39 @@ class CoalaIp:
     def register_manifestation(self, manifestation_data, *, user,
                                existing_work=None, work_data=None, **kwargs):
         """Register a Manifestation and automatically assign its
-        corresponding Copyright to the given 'user'.
+        corresponding Copyright to the given :attr:`user`.
 
-        Unless specified (see 'existing_work'), also registers a new
-        Work for the Manifestation.
+        Unless specified (see :attr:`existing_work`), also registers a
+        new Work for the Manifestation.
 
         Args:
             manifestation_data (dict): a dict holding the model data for
-                the Manifestation
+                the Manifestation.
+                See :class:`~coalaip.models.Manifestation` for requirements.
             user (any, keyword): a user based on the format specified by
                 the persistence layer
             existing_work (:class:`~coalaip.models.Work`, keyword, optional):
-                the id of an already existing Work that the
-                Manifestation is derived from.
-                If specified, the 'work_data' parameter is ignored.
+                an already persisted Work that the Manifestation is
+                derived from.
+                If specified, the :attr:`work_data` parameter is ignored
+                and no Work is registered.
             work_data (dict, keyword, optional): a dict holding the
                 model data for the Work that will automatically
-                generated for the Manifestation if no existing work is
+                generated for the Manifestation if no existing work was
                 specified.
-                If not specified, the Work will be created using only the
-                name of the Manifestation.
+                See :class:`~coalaip.models.Work` for requirements.
+                If not specified, the Work will be created using only
+                the name of the Manifestation.
             **kwargs: keyword arguments passed through to each model's
                 :meth:`~coalaip.models.CoalaIpEntity.create` (e.g.
                 ``data_format``).
 
         Returns:
-            namedtuple: a namedtuple containing the Coypright of the
-            registered Manifestation, the registered Manifestation,
+            :class:`~coalaip.coalaip.RegistrationResult`: a
+            :obj:`collections.namedtuple` containing the Coypright of
+            the registered Manifestation, the registered Manifestation,
             and the Work (either the automatically created Work or
-            the given 'existing_work')::
+            the given :attr:`existing_work`) as named fields::
 
                 (
                     'copyright': (:class:`~coalaip.models.Copyright`),
@@ -96,6 +100,11 @@ class CoalaIp:
                 )
 
         Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the
+                :attr:`manifestation_data` or :attr:`work_data` contain
+                invalid or are missing required properties.
+            :class:`~coalaip.exceptions.EntityNotYetPersistedError`: if the
+                :attr:`existing_work` has not been persisted yet
             :class:`~coalaip.exceptions.EntityCreationError`: if the
                 manifestation, its copyright, or the automatically
                 created work (if no existing work is given) fail to be
