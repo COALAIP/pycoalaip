@@ -31,11 +31,10 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
 
 @mark.parametrize('data_format', [(''), ('json'), ('jsonld')])
 @mark.parametrize('work_data', [None, {'name': 'mock_work_name'}])
-def test_register_manifestation(mock_plugin, mock_coalaip,
-                                manifestation_data_factory, alice_user,
-                                data_format, work_data, mock_work_create_id,
-                                mock_manifestation_create_id,
-                                mock_copyright_create_id):
+def test_register_manifestation_with_work_data(
+        mock_plugin, mock_coalaip, manifestation_data_factory, alice_user,
+        data_format, work_data, mock_work_create_id,
+        mock_manifestation_create_id, mock_copyright_create_id):
     from tests.utils import (
         assert_key_values_present_in_dict,
         create_entity_id_setter
@@ -43,8 +42,8 @@ def test_register_manifestation(mock_plugin, mock_coalaip,
 
     # Create the default manifestation model, but remove the
     # 'manifestationOfWork' key since it'll be created through registration
-    manifestation_model = manifestation_data_factory()
-    del manifestation_model['manifestationOfWork']
+    manifestation_data = manifestation_data_factory()
+    del manifestation_data['manifestationOfWork']
 
     # Set the persisted ids of the entities
     mock_plugin.save.side_effect = create_entity_id_setter(
@@ -60,7 +59,7 @@ def test_register_manifestation(mock_plugin, mock_coalaip,
 
     # Test the entities were persisted
     manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
-        manifestation_model,
+        manifestation_data,
         user=alice_user,
         work_data=work_data,
         **register_manifestation_kwargs,
@@ -121,8 +120,8 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
 
     # Create the default manifestation model, but remove the
     # 'manifestationOfWork' key since it'll be created through registration
-    manifestation_model = manifestation_data_factory()
-    del manifestation_model['manifestationOfWork']
+    manifestation_data = manifestation_data_factory()
+    del manifestation_data['manifestationOfWork']
 
     # Set the persisted ids of the entities
     mock_plugin.save.side_effect = create_entity_id_setter(
@@ -134,15 +133,15 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
     # Throws if given Work is not a Work
     with raises(TypeError):
         mock_coalaip.register_manifestation(
-            manifestation_model,
+            manifestation_data,
             user=alice_user,
-            existing_work=manifestation_model,
+            existing_work={},
         )
 
     # Throws if given Work has not been persisted yet
     with raises(EntityNotYetPersistedError):
         mock_coalaip.register_manifestation(
-            manifestation_model,
+            manifestation_data,
             user=alice_user,
             existing_work=work_model,
             work_data={'ignored': 'ignored'}
@@ -152,7 +151,7 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
     # ignores any given work_data)
     mock_plugin.reset_mock()  # Reset call counts on the mock from before
     new_manifestation_copyright, new_manifestation, old_work = mock_coalaip.register_manifestation(
-        manifestation_model,
+        manifestation_data,
         user=alice_user,
         existing_work=persisted_jsonld_registration.work
     )
@@ -190,11 +189,11 @@ def test_register_manifestation_raises_on_creation_error(mock_plugin,
 
     # Create the default manifestation model, but remove the
     # 'manifestationOfWork' key since it'll be created through registration
-    manifestation_model = manifestation_data_factory()
-    del manifestation_model['manifestationOfWork']
+    manifestation_data = manifestation_data_factory()
+    del manifestation_data['manifestationOfWork']
 
     with raises(EntityCreationError):
         manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
-            manifestation_model,
+            manifestation_data,
             user=alice_user,
         )
