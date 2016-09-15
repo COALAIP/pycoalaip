@@ -250,13 +250,12 @@ class Creation(CoalaIpEntity):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' does not include a ``name`` key
+                'data' dict does not contain a string value for ``name``
         """
 
         creation_name = data.get('name')
 
         if not isinstance(creation_name, str):
-            # Proper error type... is ValueError right? Or KeyError? Or both?
             raise EntityDataError(("'name' must be given as a string in the "
                                    "'data' of a Creation. Given "
                                    "'{}'".format(creation_name)))
@@ -289,8 +288,8 @@ class Work(Creation):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' includes a ``manifestationOfWork`` key or
-                includes a ``isManifestation`` key whose value is True.
+                'data' dict contains ``manifestationOfWork`` or a True
+                value for ``isManifestation``.
         """
 
         if 'manifestationOfWork' in data:
@@ -328,7 +327,8 @@ class Manifestation(Creation):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' does not include a ``manifestationOfWork`` key
+                'data' dict does not contain a string value for
+                ``manifestationOfWork``
         """
 
         manifestation_of = data.get('manifestationOfWork')
@@ -431,7 +431,7 @@ class Copyright(Right):
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' does not include a ``rightsOf`` key
+                'data' does not contain a string value for ``rightsOf``
         """
 
         rights_of = data.get('rightsOf')
