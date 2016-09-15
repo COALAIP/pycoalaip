@@ -444,22 +444,6 @@ class Copyright(Right):
         super().__init__(data, entity_type='Copyright', *args, **kwargs)
 
 
-class GenericDerivedRight(Right):
-    """
-    TODO
-    """
-
-    def __init__(self, data, *args, entity_type='GenericDerivedRight',
-                 **kwargs):
-        """Initialize a :class:`~coalaip.models.GenericDerivedRight`
-        instance
-
-        TODO
-        """
-
-        super().__init__(data, entity_type=entity_type, *args, **kwargs)
-
-
 class RightsAssignment(CoalaIpEntity):
     """COALA IP's RightsAssignment entity.
 
