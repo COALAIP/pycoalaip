@@ -29,6 +29,38 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
                                                  **generate_user_kwargs)
 
 
+def test_register_manifestation_with_work_id_in_data(
+        mock_plugin, mock_coalaip, manifestation_data_factory, alice_user,
+        work_model, manifestation_model, persisted_jsonld_registration,
+        mock_manifestation_create_id, mock_copyright_create_id):
+    from tests.utils import create_entity_id_setter
+    ignored_work_model = work_model
+
+    # Create the default manifestation model, but change the
+    # 'manifestationOfWork' key to differentiate it from work_model
+    manifestation_data = manifestation_data_factory()
+    manifestation_data['manifestationOfWork'] = 'provided_work_id'
+
+    # Set the persisted ids of the entities
+    mock_plugin.save.side_effect = create_entity_id_setter(
+        None,  # No Work should be created
+        mock_manifestation_create_id,
+        mock_copyright_create_id,
+    )
+
+    manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
+        manifestation_data,
+        user=alice_user,
+        existing_work=ignored_work_model,
+    )
+    assert manifestation_copyright.persist_id == mock_copyright_create_id
+    assert manifestation.persist_id == mock_manifestation_create_id
+    assert work is None
+
+    assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
+    assert manifestation.data['manifestationOfWork'] == manifestation_data['manifestationOfWork']
+
+
 @mark.parametrize('data_format', [(''), ('json'), ('jsonld')])
 @mark.parametrize('work_data', [None, {'name': 'mock_work_name'}])
 def test_register_manifestation_with_work_data(
