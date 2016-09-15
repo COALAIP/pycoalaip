@@ -261,18 +261,119 @@ def test_manifestation_non_transferrable(manifestation_model):
         manifestation_model.transfer()
 
 
-def test_copyright_init(mock_plugin, copyright_data_factory,
-                        copyright_json_factory, copyright_jsonld_factory):
-    from coalaip.models import Copyright
+@mark.parametrize('right_type,data_factory_name,json_factory_name, jsonld_factory_name', [
+    ('right', 'right_data_factory', 'right_json_factory', 'right_jsonld_factory'),
+    ('copyright', 'copyright_data_factory', 'copyright_json_factory', 'copyright_jsonld_factory'),
+])
+def test_right_init(mock_plugin, right_type, data_factory_name,
+                    json_factory_name, jsonld_factory_name, request):
+    from coalaip.models import Copyright, Right
+    data_factory = request.getfixturevalue(data_factory_name)
+    json_factory = request.getfixturevalue(json_factory_name)
+    jsonld_factory = request.getfixturevalue(jsonld_factory_name)
 
-    copyright_data = copyright_data_factory()
-    copyright_json = copyright_json_factory()
-    copyright_jsonld = copyright_jsonld_factory()
+    right_data = data_factory()
+    right_json = json_factory()
+    right_jsonld = jsonld_factory()
 
-    copyright = Copyright(copyright_data, plugin=mock_plugin)
-    assert copyright.persist_id is None
-    assert copyright.to_json() == copyright_json
-    assert copyright.to_jsonld() == copyright_jsonld
+    if right_type == 'right':
+        right = Right(right_data, plugin=mock_plugin)
+    elif right_type == 'copyright':
+        right = Copyright(right_data, plugin=mock_plugin)
+
+    assert right.persist_id is None
+    assert right.to_json() == right_json
+    assert right.to_jsonld() == right_jsonld
+
+
+@mark.parametrize('right_type,right_model_name,mock_create_id_name', [
+    ('right', 'right_model', 'mock_right_create_id'),
+    ('copyright', 'copyright_model', 'mock_copyright_create_id'),
+])
+@mark.parametrize('data_format,model_factory_name_template', [
+    ('', '{right_type}_jsonld_factory'),
+    ('json', '{right_type}_json_factory'),
+    ('jsonld', '{right_type}_jsonld_factory'),
+])
+def test_copyright_create(mock_plugin, alice_user, right_type,
+                          right_model_name, mock_create_id_name,
+                          data_format, model_factory_name_template, request):
+    model_factory_name = model_factory_name_template.format(right_type=right_type)
+
+    model_factory = request.getfixturevalue(model_factory_name)
+    right_model = request.getfixturevalue(right_model_name)
+    mock_create_id = request.getfixturevalue(mock_create_id_name)
+
+    mock_plugin.save.return_value = mock_create_id
+
+    if data_format:
+        persist_id = right_model.create(alice_user, data_format)
+    else:
+        persist_id = right_model.create(alice_user)
+    assert mock_plugin.save.call_count == 1
+    assert persist_id == mock_create_id
+    assert persist_id == right_model.persist_id
+
+    model_data = model_factory()
+    mock_plugin.save.assert_called_with(model_data, user=alice_user)
+
+
+@mark.parametrize('right_type,right_model_name,mock_create_id_name', [
+    ('right', 'right_model', 'mock_right_create_id'),
+    ('copyright', 'copyright_model', 'mock_copyright_create_id'),
+])
+@mark.parametrize('data_format,rights_assignment_data_name', [
+    ('', 'rights_assignment_jsonld'),
+    ('json', 'rights_assignment_json'),
+    ('jsonld', 'rights_assignment_jsonld'),
+])
+def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
+                                 rights_assignment_data, right_type,
+                                 right_model_name, mock_create_id_name,
+                                 data_format, rights_assignment_data_name,
+                                 mock_rights_assignment_create_id, request):
+    from coalaip.exceptions import EntityNotYetPersistedError
+    right_model = request.getfixturevalue(right_model_name)
+    mock_create_id = request.getfixturevalue(mock_create_id_name)
+
+    with raises(EntityNotYetPersistedError):
+        right_model.transfer(rights_assignment_data, from_user=alice_user,
+                             to_user=bob_user)
+
+    # Save the Copyright
+    mock_plugin.save.return_value = mock_create_id
+    right_model.create(user=alice_user)
+
+    # Test the transfer
+    mock_plugin.transfer.return_value = mock_rights_assignment_create_id
+    transfer_kwargs = {
+        'from_user': alice_user,
+        'to_user': bob_user
+    }
+    if data_format:
+        transfer_kwargs['rights_assignment_format'] = data_format
+
+    transfer_tx_id = right_model.transfer(rights_assignment_data,
+                                          **transfer_kwargs)
+    assert transfer_tx_id == mock_rights_assignment_create_id
+
+    rights_assignment_model_data = request.getfixturevalue(
+        rights_assignment_data_name)
+    mock_plugin.transfer.assert_called_with(mock_create_id,
+                                            rights_assignment_model_data,
+                                            from_user=alice_user,
+                                            to_user=bob_user)
+
+
+def test_right_init_raises_without_allowed_by(mock_plugin, right_data_factory):
+    from coalaip.models import Right
+    from coalaip.exceptions import EntityDataError
+
+    right_data = right_data_factory(allowedBy='')
+    del right_data['allowedBy']
+
+    with raises(EntityDataError):
+        Right(right_data, plugin=mock_plugin)
 
 
 def test_copyright_init_raises_without_rights_of(mock_plugin,
@@ -287,69 +388,29 @@ def test_copyright_init_raises_without_rights_of(mock_plugin,
         Copyright(copyright_data, plugin=mock_plugin)
 
 
-@mark.parametrize('data_format,model_factory_name', [
-    ('', 'copyright_jsonld_factory'),
-    ('json', 'copyright_json_factory'),
-    ('jsonld', 'copyright_jsonld_factory'),
-])
-def test_copyright_create(mock_plugin, copyright_model, alice_user,
-                          data_format, model_factory_name,
-                          mock_copyright_create_id, request):
-    mock_plugin.save.return_value = mock_copyright_create_id
+def test_copyright_init_raises_if_derived(mock_plugin, copyright_data_factory,
+                                          mock_copyright_create_id):
+    from coalaip.models import Copyright
+    from coalaip.exceptions import EntityDataError
 
-    if data_format:
-        persist_id = copyright_model.create(alice_user, data_format)
-    else:
-        persist_id = copyright_model.create(alice_user)
-    assert mock_plugin.save.call_count == 1
-    assert persist_id == mock_copyright_create_id
-    assert persist_id == copyright_model.persist_id
+    copyright_data = copyright_data_factory()
+    copyright_data['allowedBy'] = mock_copyright_create_id
 
-    model_factory = request.getfixturevalue(model_factory_name)
-    model_data = model_factory()
-
-    mock_plugin.save.assert_called_with(model_data, user=alice_user)
+    with raises(EntityDataError):
+        Copyright(copyright_data, plugin=mock_plugin)
 
 
-@mark.parametrize('data_format,rights_assignment_data_name', [
-    ('', 'rights_assignment_jsonld'),
-    ('json', 'rights_assignment_json'),
-    ('jsonld', 'rights_assignment_jsonld'),
-])
-def test_copyright_transferrable(mock_plugin, copyright_model,
-                                 rights_assignment_data, alice_user, bob_user,
-                                 data_format, rights_assignment_data_name,
-                                 mock_copyright_create_id,
-                                 mock_rights_assignment_create_id, request):
-    from coalaip.exceptions import EntityNotYetPersistedError
+def test_right_init_raises_with_both_rights_of_allowed_by(
+        mock_plugin, right_data_factory, mock_manifestation_create_id):
+    from coalaip.models import Right
+    from coalaip.exceptions import EntityDataError
 
-    with raises(EntityNotYetPersistedError):
-        copyright_model.transfer(rights_assignment_data, from_user=alice_user,
-                                 to_user=bob_user)
+    right_data = right_data_factory(
+        data={'rightsOf': mock_manifestation_create_id}
+    )
 
-    # Save the Copyright
-    mock_plugin.save.return_value = mock_copyright_create_id
-    copyright_model.create(user=alice_user)
-
-    # Test the transfer
-    mock_plugin.transfer.return_value = mock_rights_assignment_create_id
-    transfer_kwargs = {
-        'from_user': alice_user,
-        'to_user': bob_user
-    }
-    if data_format:
-        transfer_kwargs['rights_assignment_format'] = data_format
-
-    transfer_tx_id = copyright_model.transfer(rights_assignment_data,
-                                              **transfer_kwargs)
-    assert transfer_tx_id == mock_rights_assignment_create_id
-
-    rights_assignment_model_data = request.getfixturevalue(
-        rights_assignment_data_name)
-    mock_plugin.transfer.assert_called_with(mock_copyright_create_id,
-                                            rights_assignment_model_data,
-                                            from_user=alice_user,
-                                            to_user=bob_user)
+    with raises(EntityDataError):
+        Right(right_data, plugin=mock_plugin)
 
 
 def test_rights_assignment_init(mock_plugin, rights_assignment_data,

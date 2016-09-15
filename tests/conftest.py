@@ -184,6 +184,50 @@ def mock_copyright_create_id():
 
 
 @fixture
+def right_data_factory(mock_copyright_create_id):
+    def factory(*, allowedBy=mock_copyright_create_id, data=None):
+        right_data = {
+            'allowedBy': allowedBy
+        }
+        return extend_dict(right_data, data)
+    return factory
+
+
+@fixture
+def right_jsonld_factory(right_data_factory):
+    def factory(**kwargs):
+        ld_data = {
+            '@context': COALAIP,
+            '@type': 'Right',
+            '@id': '',
+        }
+        return extend_dict(ld_data, right_data_factory(**kwargs))
+    return factory
+
+
+@fixture
+def right_json_factory(right_data_factory):
+    def factory(**kwargs):
+        json_data = {
+            'type': 'Right',
+        }
+        return extend_dict(json_data, right_data_factory(**kwargs))
+    return factory
+
+
+@fixture
+def right_model(mock_plugin, right_data_factory):
+    from coalaip.models import Right
+    right_data = right_data_factory()
+    return Right(right_data, plugin=mock_plugin)
+
+
+@fixture
+def mock_right_create_id():
+    return 'mock_right_create_id'
+
+
+@fixture
 def transfer_contract_url():
     return 'https://ipdb.s3.amazonaws.com/1234567890.pdf'
 
