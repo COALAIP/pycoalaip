@@ -68,6 +68,9 @@ class CoalaIp:
             manifestation_data (dict): a dict holding the model data for
                 the Manifestation.
                 See :class:`~coalaip.models.Manifestation` for requirements.
+                If ``manifestationOfWork`` is provided in the dict, the
+                :attr:`existing_work` and :attr:`work_data` parameters are
+                ignored and no Work is registered.
             user (any, keyword): a user based on the format specified by
                 the persistence layer
             existing_work (:class:`~coalaip.models.Work`, keyword, optional):
@@ -90,14 +93,18 @@ class CoalaIp:
             :class:`~coalaip.coalaip.RegistrationResult`: a
             :obj:`collections.namedtuple` containing the Coypright of
             the registered Manifestation, the registered Manifestation,
-            and the Work (either the automatically created Work or
-            the given :attr:`existing_work`) as named fields::
+            and the Work as named fields::
 
                 (
                     'copyright': (:class:`~coalaip.models.Copyright`),
                     'manifestation': (:class:`~coalaip.models.Manifestation`),
                     'work': (:class:`~coalaip.models.Work`),
                 )
+
+            If ``manifestationOfWork`` was provided in
+            :attr:`manifestation_data`, None will be returned for the
+            Work; otherwise, the given :attr:`existing_work` or
+            automatically created Work will be returned.
 
         Raises:
             :class:`~coalaip.exceptions.EntityDataError`: if the
@@ -114,24 +121,28 @@ class CoalaIp:
         # TODO: in the future, we may want to consider blocking (or asyncing) until
         # we confirm that an entity has actually been created
 
-        work = existing_work
-        if existing_work is None:
-            if work_data is None:
-                work_data = {'name': manifestation_data.get('name')}
-            work = Work(work_data, plugin=self._plugin)
-            work.create(user, **kwargs)
-        elif not isinstance(existing_work, Work):
-            raise TypeError(("'existing_work' argument to "
-                             'register_manifestation() must be a Work. '
-                             "Given an instance of '{}'".format(type(work))))
-        elif existing_work.persist_id is None:
-            raise EntityNotYetPersistedError(("Work given as 'existing_work' "
-                                              'to register_manifestation() '
-                                              'must be already created on the '
-                                              'backing persistence layer.'))
-        work_id = work.persist_id
+        work = None
+        if not manifestation_data.get('manifestationOfWork'):
+            work = existing_work
+            if existing_work is None:
+                if work_data is None:
+                    work_data = {'name': manifestation_data.get('name')}
+                work = Work(work_data, plugin=self._plugin)
+                work.create(user, **kwargs)
+            elif not isinstance(existing_work, Work):
+                raise TypeError(("'existing_work' argument to "
+                                 "'register_manifestation()' must be a Work. "
+                                 'Given an instance of '
+                                 "'{}'".format(type(existing_work))))
+            elif existing_work.persist_id is None:
+                raise EntityNotYetPersistedError(
+                    ("Work given as 'existing_work' to "
+                     "'register_manifestation()' must be already created on "
+                     'the backing persistence layer.')
+                )
 
-        manifestation_data['manifestationOfWork'] = work_id
+            manifestation_data['manifestationOfWork'] = work.persist_id
+
         manifestation = Manifestation(manifestation_data, plugin=self._plugin)
         manifestation.create(user, **kwargs)
 
