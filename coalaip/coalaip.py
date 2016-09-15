@@ -66,16 +66,17 @@ class CoalaIp:
 
         Args:
             manifestation_data (dict): a dict holding the model data for
-                the Manifestation
+                the Manifestation.
             user (any, keyword): a user based on the format specified by
                 the persistence layer
             existing_work (:class:`~coalaip.models.Work`, keyword, optional):
-                an already persisted Work that the Manifestation derives
-                from.
-                If specified, the :attr:`work_data` parameter is ignored.
+                an already persisted Work that the Manifestation is
+                derived from.
+                If specified, the :attr:`work_data` parameter is ignored
+                and no Work is registered.
             work_data (dict, keyword, optional): a dict holding the
                 model data for the Work that will automatically
-                generated for the Manifestation if no existing work is
+                generated for the Manifestation if no existing work was
                 specified.
                 If not specified, the Work will be created using only
                 the name of the Manifestation.
