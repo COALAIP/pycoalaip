@@ -123,11 +123,9 @@ def manifestation_json_factory(manifestation_data_factory):
 
 
 @fixture
-def manifestation_model(mock_plugin, manifestation_data_factory,
-                        mock_work_create_id):
+def manifestation_model(mock_plugin, manifestation_data_factory):
     from coalaip.models import Manifestation
-    manifestation_data = manifestation_data_factory(
-        manifestationOfWork=mock_work_create_id)
+    manifestation_data = manifestation_data_factory()
     return Manifestation(manifestation_data, plugin=mock_plugin)
 
 
@@ -174,11 +172,9 @@ def copyright_json_factory(copyright_data_factory):
 
 
 @fixture
-def copyright_model(mock_plugin, copyright_data_factory,
-                    mock_manifestation_create_id):
+def copyright_model(mock_plugin, copyright_data_factory):
     from coalaip.models import Copyright
-    copyright_data = copyright_data_factory(
-        rightsOf=mock_manifestation_create_id)
+    copyright_data = copyright_data_factory()
     return Copyright(copyright_data, plugin=mock_plugin)
 
 
