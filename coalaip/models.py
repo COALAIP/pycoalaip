@@ -61,14 +61,14 @@ class CoalaIpEntity:
                              "'{}' instead.".format(type(plugin))))
 
         if not isinstance(entity_type, str):
-            raise EntityDataError(("The 'entity_type' must be provided as a "
-                                   'string to the entity. '
-                                   "Got '{}' instead.".format(entity_type)))
+            raise EntityDataError(("'entity_type' must be provided as a "
+                                   'string to CoalaIpEntities. '
+                                   "Given '{}'".format(entity_type)))
 
         if not isinstance(data, dict):
-            raise EntityDataError(("The 'data' must be provided as a dict"
-                                   'to the entity. Given an object of type'
-                                   "'{}' instead.".format(type(data))))
+            raise EntityDataError(("'data' must be provided as a dict"
+                                   'to CoalaIpEntities. Given '
+                                   "'{}'".format(data)))
 
         self._data = data
         self._entity_type = entity_type
@@ -258,8 +258,8 @@ class Creation(CoalaIpEntity):
         if not isinstance(creation_name, str):
             # Proper error type... is ValueError right? Or KeyError? Or both?
             raise EntityDataError(("'name' must be given as a string in the "
-                                   "'data' of Creations (Works and Manifestations). "
-                                   "Given '{}' instead.".format(creation_name)))
+                                   "'data' of a Creation. Given "
+                                   "'{}'".format(creation_name)))
 
         super().__init__(data, *args, **kwargs)
 
@@ -335,8 +335,8 @@ class Manifestation(Creation):
 
         if not isinstance(manifestation_of, str):
             raise EntityDataError(("'manifestationOfWork' must be given as a "
-                                   "string in the 'data' of Manifestations. "
-                                   "Given '{}' instead.".format(manifestation_of)))
+                                   "string in the 'data' of a Manifestation. "
+                                   "Given '{}'".format(manifestation_of)))
 
         # If the entity type is already specified as part of the data, use that
         # instead of 'CreativeWork'
@@ -438,8 +438,8 @@ class Copyright(Right):
 
         if not isinstance(rights_of, str):
             raise EntityDataError(("'rightsOf' must be given as a string in "
-                                   "the 'data' of Copyrights. "
-                                   "Given '{}' instead.".format(rights_of)))
+                                   "the 'data' of a Copyright. Given "
+                                   "'{}'".format(rights_of)))
 
         super().__init__(data, entity_type='Copyright', *args, **kwargs)
 
