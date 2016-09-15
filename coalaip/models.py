@@ -356,6 +356,9 @@ class Right(CoalaIpTransferrableEntity):
     A statement of entitlement (i.e. "right") to do something in
     relation to a :class:`~coalaip.models.Work` or
     :class:`~coalaip.models.Manifestation`.
+
+    More specific rights, such as PlaybackRights, StreamRights, etc
+    should be implemented as subclasses of this class.
     """
 
     def __init__(self, data, *args, entity_type='Right',
@@ -363,7 +366,13 @@ class Right(CoalaIpTransferrableEntity):
         """Initialize a :class:`~coalaip.models.Right` instance
 
         Args:
-            data (dict): a dict holding the model data for the Right
+            data (dict): a dict holding the model data for the Right.
+                Must include either a ``rightsOf`` or ``allowedBy`` key:
+                ``rightsOf`` indicates that the Right contains full
+                rights to an existing Manifestation or Work while
+                ``allowedBy`` indicates that the Right is derived from
+                and allowed by a source Right (note that the two
+                \*must not\* be provided together).
             entity_type (str, keyword, optional): the "@type" of the
                 Manifestation.
                 Defaults to 'Right'.
@@ -373,7 +382,27 @@ class Right(CoalaIpTransferrableEntity):
                 dependent on schema.org.
             *args: see :class:`~coalaip.models.CoalaIpEntity`
             **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the given
+                'data' dict does not contain exactly one of ``rightsOf``
+                or ``allowedBy`` as a string value.
         """
+
+        rights_of = data.get('rightsOf')
+        allowed_by = data.get('allowedBy')
+        if rights_of is not None and not isinstance(rights_of, str):
+            raise EntityDataError(("'rightsOf' must be given as a string in "
+                                   "the 'data' of a Right. Given "
+                                   "'{}'".format(rights_of)))
+        if allowed_by is not None and not isinstance(allowed_by, str):
+            raise EntityDataError(("'allowedBy' must be given as a string in "
+                                   "the 'data' of a Right. Given "
+                                   "'{}'".format(rights_of)))
+        if not (bool(rights_of) ^ bool(allowed_by)):
+            raise EntityDataError(("One and only one of 'rightsOf' or "
+                                   "'allowedBy' can be given in the 'data' of "
+                                   'a Right.'))
 
         super().__init__(data, entity_type=entity_type, ctx=ctx, *args,
                          **kwargs)
@@ -434,12 +463,9 @@ class Copyright(Right):
                 'data' does not contain a string value for ``rightsOf``
         """
 
-        rights_of = data.get('rightsOf')
-
-        if not isinstance(rights_of, str):
-            raise EntityDataError(("'rightsOf' must be given as a string in "
-                                   "the 'data' of a Copyright. Given "
-                                   "'{}'".format(rights_of)))
+        if 'allowedBy' in data:
+            raise EntityDataError(("'allowedBy' must not be given in the "
+                                   "'data' of Copyrights"))
 
         super().__init__(data, entity_type='Copyright', *args, **kwargs)
 
