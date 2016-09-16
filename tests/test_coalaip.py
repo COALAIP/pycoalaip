@@ -256,7 +256,130 @@ def test_register_manifestation_raises_on_creation_error(mock_plugin,
 
     manifestation_data = manifestation_data_factory()
     with raises(EntityCreationError):
-        manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
-            manifestation_data,
-            user=alice_user,
-        )
+        mock_coalaip.register_manifestation(manifestation_data,
+                                            user=alice_user)
+
+
+@mark.parametrize('data_format', [(''), ('json'), ('jsonld')])
+def test_derive_right(mock_plugin, mock_coalaip, right_data_factory, alice_user,
+                      data_format, mock_copyright_create_id,
+                      mock_right_create_id):
+    mock_plugin.save.return_value = mock_right_create_id
+
+    # Create the default right model with 'allowedBy' already set
+    right_data = right_data_factory()
+
+    derive_right_kwargs = {}
+    if data_format:
+        derive_right_kwargs['data_format'] = data_format
+
+    # Create the Right and test it was persisted
+    right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                      **derive_right_kwargs)
+    assert right.persist_id == mock_right_create_id
+
+    # Test the correct data format was persisted
+    if data_format == 'json':
+        right_persisted_data = right.to_json()
+    elif data_format == 'ipld':
+        raise NotImplementedError('IPLD is not implemented yet')
+    else:
+        right_persisted_data = right.to_jsonld()
+
+    # Check we called plugin.save() with the right format
+    mock_plugin.save.assert_called_once_with(right_persisted_data,
+                                             user=alice_user)
+
+
+def test_derive_right_with_allowed_by_in_data(mock_plugin, mock_coalaip,
+                                              right_data_factory, alice_user,
+                                              copyright_model,
+                                              mock_right_create_id):
+    ignored_copyright_model = copyright_model
+    provided_copyright_id = 'provided_copyright_id'
+    mock_plugin.save.return_value = mock_right_create_id
+
+    # Create the default right model, but change the 'allowedBy' key to
+    # differentiate it from copyright_model
+    right_data = right_data_factory(data={
+        'allowedBy': provided_copyright_id
+    })
+
+    # Create the Right and test it was persisted with the correct Copyright
+    right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                      source_right=ignored_copyright_model)
+    assert right.data['allowedBy'] == provided_copyright_id
+
+
+def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
+                                                 right_data_factory,
+                                                 alice_user, copyright_model,
+                                                 persisted_jsonld_registration,
+                                                 mock_right_create_id):
+    from coalaip.exceptions import EntityNotYetPersistedError
+    persisted_copyright = persisted_jsonld_registration.copyright
+    mock_plugin.save.return_value = mock_right_create_id
+
+    # Create the default right model, but remove the 'allowedBy' key to use
+    # the source_right
+    right_data = right_data_factory()
+    del right_data['allowedBy']
+
+    # Throws if given source_right is not a Right
+    with raises(TypeError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                  source_right={})
+
+    # Throws if given source_right has not been persisted yet
+    with raises(EntityNotYetPersistedError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                  source_right=copyright_model)
+
+    # Test the new Right is created with the given source_right
+    mock_plugin.reset_mock()  # Reset call counts on the mock from before
+    right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                      source_right=persisted_copyright)
+    assert right.data['allowedBy'] == persisted_copyright.persist_id
+
+    # Check we called plugin.save() with the correct Copyright
+    mock_plugin.save.assert_called_once_with(right.to_jsonld(),
+                                             user=alice_user)
+
+
+def test_derive_right_with_custom_model_cls(mock_plugin, mock_coalaip,
+                                            right_data_factory, alice_user,
+                                            mock_right_create_id):
+    from coalaip.models import Right
+    mock_plugin.save.return_value = mock_right_create_id
+
+    custom_right_type = 'CustomRight'
+
+    class CustomRight(Right):
+        def __init__(self, data, *args, **kwargs):
+            super().__init__(data, entity_type=custom_right_type, *args, **kwargs)
+
+    # Create the default right model with 'allowedBy' already set
+    right_data = right_data_factory()
+
+    # Test the new Right is created with the given source_right
+    custom_right = mock_coalaip.derive_right(
+        right_data,
+        current_holder=alice_user,
+        right_model_cls=CustomRight
+    )
+    assert isinstance(custom_right, CustomRight)
+    assert custom_right.to_json()['type'] == custom_right_type
+    assert custom_right.persist_id == mock_right_create_id
+    assert custom_right.data['allowedBy'] == right_data['allowedBy']
+
+
+def test_derive_right_raises_on_creation_error(mock_plugin, mock_coalaip,
+                                               right_data_factory, alice_user):
+    from coalaip.exceptions import EntityCreationError
+
+    mock_creation_error = 'mock_creation_error'
+    mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
+
+    right_data = right_data_factory()
+    with raises(EntityCreationError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user)
