@@ -283,6 +283,8 @@ class Work(Creation):
                 Must not include keys that indicate the model is a
                 :class:`~coalaip.models.Manifestation` (e.g.
                 ``manifestationOfWork`` or ``isManifestation == True``).
+                See :class:`~pycoalaip.models.Creation` for other model
+                requirements.
             *args: see :class:`~coalaip.models.CoalaIpEntity`
             **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
 
@@ -316,9 +318,12 @@ class Manifestation(Creation):
         Args:
             data (dict): a dict holding the model data for the
                 Manifestation. Must include a ``manifestationOfWork``
-                key. If an ``type`` or ``@type`` key is provided in the
+                key.
+                If an ``type`` or ``@type`` key is provided in the
                 'data', this type will be used as the ``entity_type``
                 rather than the 'entity_type' keyword argument.
+                See :class:`~pycoalaip.models.Creation` for other model
+                requirements.
             entity_type (str, keyword, optional): the "@type" of the
                 Manifestation.
                 Defaults to 'CreativeWork'.
@@ -455,6 +460,8 @@ class Copyright(Right):
         Args:
             data (dict): a dict holding the model data for the
                 Copyright. Must include at least a ``rightsOf`` key.
+                See :class:`~pycoalaip.models.Right` for other model
+                requirements.
             *args: see :class:`~coalaip.models.CoalaIpEntity`
             **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
 
