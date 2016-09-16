@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 from coalaip.exceptions import EntityNotYetPersistedError
-from coalaip.models import Copyright, Manifestation, Work
+from coalaip.models import Copyright, Right, Manifestation, Work
 from coalaip.plugin import AbstractPlugin
 
 
@@ -152,27 +152,69 @@ class CoalaIp:
 
         return RegistrationResult(manifestation_copyright, manifestation, work)
 
-    def derive_right(self, right_data, from_copyright, *, user,
-                     data_format=None):
-        """Derive a new Right from a Manifestation's Copyright.
+    def derive_right(self, right_data, *, current_holder, source_right=None,
+                     right_model_cls=Right, **kwargs):
+        """Derive a new Right from an existing :attr:`source_right` (a
+        :class:`~coalaip.models.Right` or subclass) for the
+        :attr:`current_holder` of the :attr:`source_right`. The newly
+        registered Right can then be transferred to other Parties.
 
         Args:
             right_data (dict): a dict holding the model data for the
-                Right
-            from_copyright (:class:`~coalaip.models.Copyright`): the id
-                of the Copyright that this Right should be derived from
-            user (any, keyword): a user based on the format specified by
-                the persistence layer
-            data_format (str, keyword, optional): the data format of the
-                created Right; must be one of:
-                    - 'jsonld' (default)
-                    - 'json'
-                    - 'ipld'
+                Right.
+                See the given :attr:`right_model_cls` for requirements.
+                If ``allowedBy`` is provided in the dict, the
+                :attr:`source_right` parameter is ignored.
+            current_holder (any, keyword): the current holder of the
+                :attr:`source_right`; a user based on the format
+                specified by the persistence layer
+            source_right (:class:`~coalaip.models.Right`, keyword, optional):
+                an already persisted Right that the new Right is allowed
+                by.
+                Optional if ``allowedBy`` is provided in :attr:`right_data`.
+            right_model_cls (Right, keyword, optional): a subclass of
+                :class:`~coalaip.models.Right` that should be
+                instantiated for the newly derived right.
+                Defaults to :class:~coalaip.models.Right`.
+            **kwargs: keyword arguments passed through to the
+                :attr:`right_model_cls`'s ``create`` method (e.g.
+                :meth:`~coalaip.models.CoalaIpEntity.create`'s
+                ``data_format``)
 
         Returns:
+            a registered :attr:`right_model_cls` Right model (by default a
+            :class:`~coalaip.models.Right)
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityDataError`: if the
+                :attr:`right_data` contains invalid or is missing
+                required properties.
+            :class:`~coalaip.exceptions.EntityNotYetPersistedError`: if
+                the :attr:`source_right` has not been persisted yet
+            :class:`~coalaip.exceptions.EntityCreationError`: if the
+                right fails to be created on the persistence layer
         """
 
-        raise NotImplementedError('derive_right() has not been implemented yet')
+        if not right_data.get('allowedBy'):
+            if source_right is None:
+                raise ValueError(("'source_right' argument to 'derive_right() "
+                                  "must be provided if 'allowedBy' is not "
+                                  "given as part of 'right_data'"))
+            if not isinstance(source_right, Right):
+                raise TypeError(("'source_right' argument to 'derive_right()' "
+                                 'must be a Right (or subclass). Given an '
+                                 "instance of '{}'".format(type(source_right))))
+            elif source_right.persist_id is None:
+                raise EntityNotYetPersistedError(
+                    ("Right given as 'source_right' to 'derive_right()' must "
+                     'be already created on the backing persistence layer.')
+                )
+
+            right_data['allowedBy'] = source_right.persist_id
+
+        right = right_model_cls(right_data, plugin=self._plugin)
+        right.create(current_holder, **kwargs)
+        return right
 
     def transfer_right(self, right, rights_assignment_data, *, from_user, to_user,
                        data_format=None):
