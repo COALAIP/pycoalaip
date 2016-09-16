@@ -78,6 +78,17 @@ def test_entities_have_none_status_if_not_persisted(mock_plugin,
     mock_plugin.get_status.assert_not_called()
 
 
+def test_entities_data_format_consistent(mock_plugin):
+    from coalaip.models import CoalaIpEntity
+    from tests.utils import assert_key_values_present_in_dict
+    entity_data = {'test_data': 'test_data', 'extra_data': 'extra_data'}
+    entity_model = CoalaIpEntity(data=entity_data, entity_type='type',
+                                 plugin=mock_plugin)
+
+    assert_key_values_present_in_dict(entity_model.to_json(), **entity_data)
+    assert_key_values_present_in_dict(entity_model.to_jsonld(), **entity_data)
+
+
 def test_entities_get_status(mock_plugin, base_entity_model, alice_user,
                              mock_base_entity_create_id, mock_model_status):
     # Save the entity
