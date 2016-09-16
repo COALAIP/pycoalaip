@@ -220,14 +220,18 @@ def test_manifestation_init_raises_if_no_name(mock_plugin,
         Manifestation(manifestation_data, plugin=mock_plugin)
 
 
-def test_manifestation_init_raises_without_manifestation_of(
+def test_manifestation_init_raises_without_str_manifestation_of(
         mock_plugin, manifestation_data_factory):
     from coalaip.models import Manifestation
     from coalaip.exceptions import EntityDataError
 
     manifestation_data = manifestation_data_factory()
-    del manifestation_data['manifestationOfWork']
 
+    del manifestation_data['manifestationOfWork']
+    with raises(EntityDataError):
+        Manifestation(manifestation_data, plugin=mock_plugin)
+
+    manifestation_data['manifestationOfWork'] = {}
     with raises(EntityDataError):
         Manifestation(manifestation_data, plugin=mock_plugin)
 
@@ -365,25 +369,34 @@ def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
                                             to_user=bob_user)
 
 
-def test_right_init_raises_without_allowed_by(mock_plugin, right_data_factory):
+def test_right_init_raises_without_str_allowed_by(mock_plugin,
+                                                  right_data_factory):
     from coalaip.models import Right
     from coalaip.exceptions import EntityDataError
 
-    right_data = right_data_factory(allowedBy='')
-    del right_data['allowedBy']
+    right_data = right_data_factory()
 
+    del right_data['allowedBy']
+    with raises(EntityDataError):
+        Right(right_data, plugin=mock_plugin)
+
+    right_data['allowedBy'] = {}
     with raises(EntityDataError):
         Right(right_data, plugin=mock_plugin)
 
 
-def test_copyright_init_raises_without_rights_of(mock_plugin,
-                                                 copyright_data_factory):
+def test_copyright_init_raises_without_str_rights_of(mock_plugin,
+                                                     copyright_data_factory):
     from coalaip.models import Copyright
     from coalaip.exceptions import EntityDataError
 
-    copyright_data = copyright_data_factory(rightsOf='')
-    del copyright_data['rightsOf']
+    copyright_data = copyright_data_factory()
 
+    del copyright_data['rightsOf']
+    with raises(EntityDataError):
+        Copyright(copyright_data, plugin=mock_plugin)
+
+    copyright_data['rightsOf'] = {}
     with raises(EntityDataError):
         Copyright(copyright_data, plugin=mock_plugin)
 
