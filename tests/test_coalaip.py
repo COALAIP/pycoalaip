@@ -103,11 +103,13 @@ def test_register_manifestation_with_work_id_in_data(
         mock_manifestation_create_id, mock_copyright_create_id):
     from tests.utils import create_entity_id_setter
     ignored_work_model = work_model
+    provided_work_id = 'provided_work_id'
 
     # Create the default manifestation model, but change the
     # 'manifestationOfWork' key to differentiate it from work_model
-    manifestation_data = manifestation_data_factory()
-    manifestation_data['manifestationOfWork'] = 'provided_work_id'
+    manifestation_data = manifestation_data_factory(data={
+        'manifestationOfWork': provided_work_id
+    })
 
     # Set the persisted ids of the entities
     mock_plugin.save.side_effect = create_entity_id_setter(
@@ -123,7 +125,7 @@ def test_register_manifestation_with_work_id_in_data(
     )
     assert work is None
     assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
-    assert manifestation.data['manifestationOfWork'] == manifestation_data['manifestationOfWork']
+    assert manifestation.data['manifestationOfWork'] == provided_work_id
 
 
 @mark.parametrize('work_data', [None, {'name': 'mock_work_name'}])
@@ -194,7 +196,7 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
         new_copyright_create_id,
     )
 
-    # Throws if given Work is not a Work
+    # Throws if given existing_work is not a Work
     with raises(TypeError):
         mock_coalaip.register_manifestation(
             manifestation_data,
@@ -202,7 +204,7 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
             existing_work={},
         )
 
-    # Throws if given Work has not been persisted yet
+    # Throws if given existing_work has not been persisted yet
     with raises(EntityNotYetPersistedError):
         mock_coalaip.register_manifestation(
             manifestation_data,
@@ -210,7 +212,7 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
             existing_work=work_model,
         )
 
-    # Test the new manifestation is created with the given existing_work (and
+    # Test the new Manifestation is created with the given existing_work (and
     # ignores any given work_data)
     mock_plugin.reset_mock()  # Reset call counts on the mock from before
     new_manifestation_copyright, new_manifestation, old_work = mock_coalaip.register_manifestation(
