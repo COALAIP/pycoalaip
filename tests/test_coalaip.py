@@ -29,6 +29,74 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
                                                  **generate_user_kwargs)
 
 
+@mark.parametrize('data_format', [(''), ('json'), ('jsonld')])
+def test_register_manifestation(mock_plugin, mock_coalaip,
+                                manifestation_data_factory, alice_user,
+                                data_format, mock_work_create_id,
+                                mock_manifestation_create_id,
+                                mock_copyright_create_id):
+    from tests.utils import create_entity_id_setter
+
+    # Create the default manifestation model, but remove the
+    # 'manifestationOfWork' key to create a new Work
+    manifestation_data = manifestation_data_factory()
+    del manifestation_data['manifestationOfWork']
+
+    # Set the persisted ids of the entities
+    mock_plugin.save.side_effect = create_entity_id_setter(
+        mock_work_create_id,
+        mock_manifestation_create_id,
+        mock_copyright_create_id,
+        type_key='type' if data_format == 'json' else '@type',
+    )
+
+    register_manifestation_kwargs = {}
+    if data_format:
+        register_manifestation_kwargs['data_format'] = data_format
+
+    # Create the entities and test they contain the right links
+    manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
+        manifestation_data,
+        user=alice_user,
+        **register_manifestation_kwargs,
+    )
+    assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
+    assert manifestation.data['manifestationOfWork'] == work.persist_id
+
+    # Test the entities were persisted with the set persisted ids
+    assert manifestation_copyright.persist_id == mock_copyright_create_id
+    assert manifestation.persist_id == mock_manifestation_create_id
+    assert work.persist_id == mock_work_create_id
+
+    # Test the correct data format was persisted
+    if data_format == 'json':
+        manifestation_persisted_data = manifestation.to_json()
+        copyright_persisted_data = manifestation_copyright.to_json()
+        work_persisted_data = work.to_json()
+    elif data_format == 'ipld':
+        raise NotImplementedError('IPLD is not implemented yet')
+    else:
+        manifestation_persisted_data = manifestation.to_jsonld()
+        copyright_persisted_data = manifestation_copyright.to_jsonld()
+        work_persisted_data = work.to_jsonld()
+
+    # By checking we called plugin.save() in the right order
+    mock_save_call_list = mock_plugin.save.call_args_list
+    assert len(mock_save_call_list) == 3
+    assert mock_save_call_list[0] == (
+        (work_persisted_data,),
+        {'user': alice_user},
+    )
+    assert mock_save_call_list[1] == (
+        (manifestation_persisted_data,),
+        {'user': alice_user},
+    )
+    assert mock_save_call_list[2] == (
+        (copyright_persisted_data,),
+        {'user': alice_user},
+    )
+
+
 def test_register_manifestation_with_work_id_in_data(
         mock_plugin, mock_coalaip, manifestation_data_factory, alice_user,
         work_model, manifestation_model, persisted_jsonld_registration,
@@ -53,27 +121,23 @@ def test_register_manifestation_with_work_id_in_data(
         user=alice_user,
         existing_work=ignored_work_model,
     )
-    assert manifestation_copyright.persist_id == mock_copyright_create_id
-    assert manifestation.persist_id == mock_manifestation_create_id
     assert work is None
-
     assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
     assert manifestation.data['manifestationOfWork'] == manifestation_data['manifestationOfWork']
 
 
-@mark.parametrize('data_format', [(''), ('json'), ('jsonld')])
 @mark.parametrize('work_data', [None, {'name': 'mock_work_name'}])
 def test_register_manifestation_with_work_data(
         mock_plugin, mock_coalaip, manifestation_data_factory, alice_user,
-        data_format, work_data, mock_work_create_id,
-        mock_manifestation_create_id, mock_copyright_create_id):
+        work_data, mock_work_create_id, mock_manifestation_create_id,
+        mock_copyright_create_id):
     from tests.utils import (
         assert_key_values_present_in_dict,
         create_entity_id_setter
     )
 
     # Create the default manifestation model, but remove the
-    # 'manifestationOfWork' key since it'll be created through registration
+    # 'manifestationOfWork' key to create a new Work
     manifestation_data = manifestation_data_factory()
     del manifestation_data['manifestationOfWork']
 
@@ -82,59 +146,27 @@ def test_register_manifestation_with_work_data(
         mock_work_create_id,
         mock_manifestation_create_id,
         mock_copyright_create_id,
-        type_key='type' if data_format == 'json' else '@type',
     )
 
-    register_manifestation_kwargs = {}
-    if data_format:
-        register_manifestation_kwargs['data_format'] = data_format
-
-    # Test the entities were persisted
+    # Create the entities
     manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
         manifestation_data,
         user=alice_user,
         work_data=work_data,
-        **register_manifestation_kwargs,
     )
-    assert manifestation_copyright.persist_id == mock_copyright_create_id
-    assert manifestation.persist_id == mock_manifestation_create_id
-    assert work.persist_id == mock_work_create_id
-
     assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
     assert manifestation.data['manifestationOfWork'] == work.persist_id
 
-    # Test the correct data format was persisted
-    if data_format == 'json':
-        manifestation_persisted_data = manifestation.to_json()
-        copyright_persisted_data = manifestation_copyright.to_json()
-        work_persisted_data = work.to_json()
-    elif data_format == 'ipld':
-        raise NotImplementedError('IPLD is not implemented yet')
-    else:
-        manifestation_persisted_data = manifestation.to_jsonld()
-        copyright_persisted_data = manifestation_copyright.to_jsonld()
-        work_persisted_data = work.to_jsonld()
+    work_persisted_data = work.to_jsonld()
 
-    # If given custom Work information, make sure that is reflected in the
-    # entities
+    # If given custom Work information, make sure that it's reflected in the
+    # created Work
     if work_data:
         assert_key_values_present_in_dict(work_persisted_data, **work_data)
+        assert_key_values_present_in_dict(work.data, **work_data)
 
-    # Check we called plugin.save() in the right order
-    mock_save_call_list = mock_plugin.save.call_args_list
-    assert len(mock_save_call_list) == 3
-    assert mock_save_call_list[0] == (
-        (work_persisted_data,),
-        {'user': alice_user},
-    )
-    assert mock_save_call_list[1] == (
-        (manifestation_persisted_data,),
-        {'user': alice_user},
-    )
-    assert mock_save_call_list[2] == (
-        (copyright_persisted_data,),
-        {'user': alice_user},
-    )
+    # Check we called plugin.save() with the correct data
+    mock_plugin.save.assert_any_call(work_persisted_data, user=alice_user)
 
 
 def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
@@ -151,7 +183,7 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
     new_copyright_create_id = mock_copyright_create_id + '2'
 
     # Create the default manifestation model, but remove the
-    # 'manifestationOfWork' key since it'll be created through registration
+    # 'manifestationOfWork' key to use the existing_work
     manifestation_data = manifestation_data_factory()
     del manifestation_data['manifestationOfWork']
 
@@ -176,7 +208,6 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
             manifestation_data,
             user=alice_user,
             existing_work=work_model,
-            work_data={'ignored': 'ignored'}
         )
 
     # Test the new manifestation is created with the given existing_work (and
@@ -185,7 +216,8 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
     new_manifestation_copyright, new_manifestation, old_work = mock_coalaip.register_manifestation(
         manifestation_data,
         user=alice_user,
-        existing_work=persisted_jsonld_registration.work
+        existing_work=persisted_jsonld_registration.work,
+        work_data={'ignored': 'ignored'},
     )
     assert new_manifestation_copyright.persist_id == new_copyright_create_id
     assert new_manifestation.persist_id == new_manifestation_create_id
@@ -197,7 +229,8 @@ def test_register_manifestation_with_existing_work(mock_plugin, mock_coalaip,
     assert new_manifestation.data.get('ignored') is None
     assert old_work.data.get('ignored') is None
 
-    # Check we called plugin.save() in the right order
+    # Check we called plugin.save() twice (only saving the Manifestation and
+    # Copyright) and in the right order
     mock_save_call_list = mock_plugin.save.call_args_list
     assert len(mock_save_call_list) == 2
     assert mock_save_call_list[0] == (
@@ -219,11 +252,7 @@ def test_register_manifestation_raises_on_creation_error(mock_plugin,
     mock_creation_error = 'mock_creation_error'
     mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
 
-    # Create the default manifestation model, but remove the
-    # 'manifestationOfWork' key since it'll be created through registration
     manifestation_data = manifestation_data_factory()
-    del manifestation_data['manifestationOfWork']
-
     with raises(EntityCreationError):
         manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
             manifestation_data,
