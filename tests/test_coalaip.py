@@ -373,6 +373,15 @@ def test_derive_right_with_custom_model_cls(mock_plugin, mock_coalaip,
     assert custom_right.data['allowedBy'] == right_data['allowedBy']
 
 
+def test_derive_right_raises_on_no_allowed_by_or_source_right(
+        mock_plugin, mock_coalaip, right_data_factory, alice_user):
+
+    right_data = right_data_factory()
+    del right_data['allowedBy']
+    with raises(ValueError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user)
+
+
 def test_derive_right_raises_on_creation_error(mock_plugin, mock_coalaip,
                                                right_data_factory, alice_user):
     from coalaip.exceptions import EntityCreationError
