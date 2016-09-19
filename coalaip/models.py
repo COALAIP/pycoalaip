@@ -77,8 +77,14 @@ class CoalaIpEntity:
         self._plugin = plugin
 
     def __repr__(self):
-        return "{name}: {data}".format(name=self.__class__.__name__,
-                                       data=self.data)
+        persist_str = ', {plugin}@{persist_id}'.format(
+            plugin=self.plugin_type,
+            persist_id=self.persist_id
+        ) if self.persist_id else ''
+
+        return '{name}{persist}: {data}'.format(name=self.__class__.__name__,
+                                                persist=persist_str,
+                                                data=self.data)
 
     @property
     def data(self):
