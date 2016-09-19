@@ -80,7 +80,7 @@ class CoalaIpEntity:
         persist_str = ', {plugin}@{persist_id}'.format(
             plugin=self.plugin_type,
             persist_id=self.persist_id
-        ) if self.persist_id else ''
+        ) if self.persist_id is not None else ''
 
         return '{name}{persist}: {data}'.format(name=self.__class__.__name__,
                                                 persist=persist_str,
@@ -134,7 +134,7 @@ class CoalaIpEntity:
                 the existing id of the entity on the persistence layer.
         """
 
-        if self.persist_id:
+        if self.persist_id is not None:
             raise EntityPreviouslyCreatedError(self._persist_id)
 
         entity_data = self._to_format(data_format)
@@ -231,7 +231,7 @@ class CoalaIpTransferrableEntity(CoalaIpEntity):
                 persisted to the backing persistence layer
         """
 
-        if self._persist_id is None:
+        if self.persist_id is None:
             raise EntityNotYetPersistedError(('Entities cannot be transferred '
                                               'until they have been persisted'))
 
