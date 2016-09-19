@@ -36,6 +36,11 @@ def test_entity_raise_on_bad_instantiation(mock_plugin):
                       plugin=mock_plugin)
 
 
+def test_entity_create_raises_on_bad_format(base_entity_model, alice_user):
+    with raises(ValueError):
+        base_entity_model.create(alice_user, 'bad_format')
+
+
 def test_entity_raise_on_creation_error(mock_plugin, base_entity_model,
                                         alice_user):
     from coalaip.exceptions import EntityCreationError
@@ -169,11 +174,6 @@ def test_work_create(mock_plugin, work_model, alice_user, data_format,
 
     model_data = request.getfixturevalue(model_data_name)
     mock_plugin.save.assert_called_with(model_data, user=alice_user)
-
-
-def test_work_create_raises_on_bad_format(work_model, alice_user):
-    with raises(ValueError):
-        work_model.create(alice_user, 'bad_format')
 
 
 def test_work_non_transferrable(work_model):
