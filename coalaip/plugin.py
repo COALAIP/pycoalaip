@@ -56,7 +56,7 @@ class AbstractPlugin(ABC):
                 same format as :meth:`generate_user`'s output.
 
         Returns:
-            (str): the id of the created entity on the persistence layer
+            str: the id of the created entity on the persistence layer
 
         Raises:
             :class:`coalaip.exceptions.EntityCreationError`: if the
@@ -79,6 +79,6 @@ class AbstractPlugin(ABC):
                 format as :meth:`generate_user`'s output
 
         Returns:
-            (str): the id of the transfer action on the persistence
+            str: the id of the transfer action on the persistence
             layer
         """

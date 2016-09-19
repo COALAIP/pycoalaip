@@ -36,7 +36,7 @@ class CoalaIpEntity:
             entity_type (str, keyword): the "@type" of the entity. Will
                 be inserted into the JSON-LD and IPLD representations
                 as-is, and as "type" in JSON representations.
-            ctx (str|str[]|dict[], keyword, optional): the context for
+            ctx (str|[str]|[dict], keyword, optional): the context for
                 the entity as either a string URL or array of string
                 URLs or dictionaries. See the `JSON-LD spec on contexts
                 <https://www.w3.org/TR/json-ld/#the-context>`_ for more
@@ -82,7 +82,7 @@ class CoalaIpEntity:
 
     @property
     def data(self):
-        """(dict): the basic data held by this entity model. Does not
+        """dict: the basic data held by this entity model. Does not
         include any JSON-LD or IPLD specific information.
         """
         # TODO: at some point when we have a .from_persist_id() factory,
@@ -92,14 +92,14 @@ class CoalaIpEntity:
 
     @property
     def persist_id(self):
-        """(str|None): the id of this entity on the persistent backing
-        layer, if saved to one. Otherwise, None.
+        """str|None: the id of this entity on the persistence layer,
+        if saved to one. Otherwise, None.
         """
         return self._persist_id
 
     @property
     def plugin_type(self):
-        """(str): the type of the plugin used by this entity"""
+        """str: the type of the plugin used by this entity"""
         return self._plugin.type
 
     def create(self, user, data_format='jsonld'):
@@ -144,7 +144,7 @@ class CoalaIpEntity:
             layer, or None if the entity is not yet persisted.
 
         Raises:
-            :class:`~coaalip.exceptions.EntityNotFoundError`: if the
+            :class:`~coalaip.exceptions.EntityNotFoundError`: if the
                 entity is persisted, but could not be found on the
                 persistence layer
         """
