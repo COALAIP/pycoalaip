@@ -144,7 +144,7 @@ class CoalaIpEntity:
             layer, or None if the entity is not yet persisted.
 
         Raises:
-            :class:`~coaalip.exceptions.EntityNotFoundError`: if the
+            :class:`~coalaip.exceptions.EntityNotFoundError`: if the
                 entity is persisted, but could not be found on the
                 persistence layer
         """
