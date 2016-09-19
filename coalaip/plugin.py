@@ -64,6 +64,22 @@ class AbstractPlugin(ABC):
         """
 
     @abstractmethod
+    def load(self, persist_id):
+        """Load the entity from the persistence layer.
+
+        Args:
+            persist_id (str): the id of the entity on the persistence
+                layer
+
+        Returns:
+            dict: the persisted data of the entity
+
+        Raises:
+            :class:`coalaip.exceptions.EntityNotFoundError`: if the
+                entity could not be found on the persistence layer
+        """
+
+    @abstractmethod
     def transfer(self, persist_id, transfer_payload, *, from_user, to_user):
         """Transfer the entity whose id matches 'persist_id' on the
         persistence layer from the current user to a new owner.

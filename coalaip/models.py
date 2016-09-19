@@ -86,14 +86,61 @@ class CoalaIpEntity:
                                                 persist=persist_str,
                                                 data=self.data)
 
+    @classmethod
+    def from_persist_id(cls, persist_id, *, force_load=False, plugin):
+        """Generic factory for creating :attr:`cls` entity instances
+        from their persisted ids.
+
+        \*Note\*: by default, instances generated from this factory
+        lazily load their data upon first access (see :meth:`data`),
+        which may throw under various conditions. In general, most
+        usages of the models do not require access to their data
+        (including internal methods), and thus the data does not usually
+        need to be loaded unless :meth:`data` or one of the
+        transformation methods, e.g. :meth:`to_json`, are explicitly
+        used. If you know you will be using the data and want to avoid
+        raising unexpected exceptions upon access, make sure to set
+        :attr:`force_load` or use :meth:`load` on the returned model
+        beforehand.
+
+        Args:
+            persist_id (str): the id of the entity on the persistence
+                layer (see :attr:`plugin`)
+            force_load (bool, keyword, optional): whether to load the
+                entity's data immediately from the persistence layer
+                after instantiation.
+                Defaults to false.
+            plugin (Plugin, keyword): the persistence layer plugin
+
+        Returns:
+            :attr:`cls`: a generated model based on :attr:`persist_id`
+
+        Raises:
+            if :attr:`force_load` is True, see :meth:`load`'s
+            potentially raised exceptions
+        """
+
+        entity = cls({}, plugin=plugin)  # Trick validation with empty dict
+        entity._data = None
+        entity._persist_id = persist_id
+        if force_load:
+            entity.load()
+        return entity
+
     @property
     def data(self):
         """dict: the basic data held by this entity model. Does not
         include any JSON-LD or IPLD specific information.
+
+        If the entity was generated through :meth:`from_persist_id`, the
+        first access of this property will also load the entity's data
+        from the persistence layer (see :meth:`load` for potentially
+        raised exceptions)
         """
-        # TODO: at some point when we have a .from_persist_id() factory,
-        # this should be extended to lazily load the entity's data from the
-        # persistence layer
+
+        if self.persist_id is not None and self._data is None:
+            self.load()
+
         return self._data
 
     @property
@@ -159,6 +206,64 @@ class CoalaIpEntity:
         if self.persist_id is None:
             return None
         return self._plugin.get_status(self.persist_id)
+
+    def load(self):
+        """Load this entity from the backing persistence layer.
+
+        When used by itself, this method is most useful in ensuring that
+        an entity generated from :meth:`from_persist_id` is actually
+        available on the persistence layer to avoid errors later.
+
+        Raises:
+            :class:`~coalaip.exceptions.EntityNotYetPersistedError`: if
+                the entity has not been persisted yet
+            :class:`~coalaip.exceptions.EntityNotFoundError`: if the
+                entity is persisted, but could not be found on the
+                persistence layer
+            :class:`~coalaip.exceptions.EntityDataError`: if the loaded
+                entity's type or context differ from their initialized
+                values
+        """
+
+        if self.persist_id is None:
+            raise EntityNotYetPersistedError(('Entities cannot be loaded '
+                                              'until they have been persisted'))
+
+        persist_data = self._plugin.load(self.persist_id)
+        model_data = copy(persist_data)
+
+        # Check the type, context, and id, if available, and remove them from
+        # the data before saving
+        for type_key in ['@type', 'type']:
+            if type_key in persist_data:
+                loaded_type = persist_data[type_key]
+
+                if loaded_type and loaded_type != self._entity_type:
+                    raise EntityDataError(
+                        ('Loaded entity type ({loaded_type}) of entity '
+                         'differs from existing entity type '
+                         '({self_type})').format(loaded_type=loaded_type,
+                                                 self_type=self._entity_type)
+                    )
+
+                del model_data[type_key]
+
+        if '@context' in persist_data:
+            loaded_ctx = persist_data['@context']
+
+            if loaded_ctx and loaded_ctx != self._ctx:
+                raise EntityDataError(
+                    ('Loaded context ({loaded_ctx}) of entity differs from '
+                     'existing context ({self_ctx})').format(
+                         loaded_ctx=loaded_ctx, self_ctx=self._ctx)
+                )
+
+            del model_data['@context']
+
+        if '@id' in persist_data:
+            del model_data['@id']
+
+        self._data = model_data
 
     def to_json(self):
         """Output this entity as a JSON-serializable dict.
