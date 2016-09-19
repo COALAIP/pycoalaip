@@ -3,7 +3,7 @@
 from pytest import mark, raises
 
 
-def test_entities_raise_on_bad_instantiation(mock_plugin):
+def test_entity_raise_on_bad_instantiation(mock_plugin):
     from coalaip.models import CoalaIpEntity
     from coalaip.exceptions import EntityDataError
 
@@ -36,8 +36,8 @@ def test_entities_raise_on_bad_instantiation(mock_plugin):
                       plugin=mock_plugin)
 
 
-def test_entities_raise_on_creation_error(mock_plugin, base_entity_model,
-                                          alice_user):
+def test_entity_raise_on_creation_error(mock_plugin, base_entity_model,
+                                        alice_user):
     from coalaip.exceptions import EntityCreationError
 
     mock_creation_error = 'mock_creation_error'
@@ -48,7 +48,7 @@ def test_entities_raise_on_creation_error(mock_plugin, base_entity_model,
     assert mock_creation_error == excinfo.value.error
 
 
-def test_entities_raise_on_creation_if_already_created(
+def test_entity_raise_on_creation_if_already_created(
         mock_plugin, base_entity_model, alice_user,
         mock_base_entity_create_id):
     from coalaip.exceptions import EntityPreviouslyCreatedError
@@ -66,19 +66,19 @@ def test_entities_raise_on_creation_if_already_created(
     assert mock_base_entity_create_id == excinfo.value.existing_id
 
 
-def test_entities_plugin_type(mock_plugin, base_entity_model):
+def test_entity_plugin_type(mock_plugin, base_entity_model):
     plugin_type = base_entity_model.plugin_type
     assert plugin_type == mock_plugin.type
 
 
-def test_entities_have_none_status_if_not_persisted(mock_plugin,
-                                                    base_entity_model):
+def test_entity_have_none_status_if_not_persisted(mock_plugin,
+                                                  base_entity_model):
     status = base_entity_model.get_status()
     assert status is None
     mock_plugin.get_status.assert_not_called()
 
 
-def test_entities_data_format_consistent(mock_plugin):
+def test_entity_data_format_consistent(mock_plugin):
     from coalaip.models import CoalaIpEntity
     from tests.utils import assert_key_values_present_in_dict
     entity_data = {'test_data': 'test_data', 'extra_data': 'extra_data'}
@@ -89,8 +89,8 @@ def test_entities_data_format_consistent(mock_plugin):
     assert_key_values_present_in_dict(entity_model.to_jsonld(), **entity_data)
 
 
-def test_entities_get_status(mock_plugin, base_entity_model, alice_user,
-                             mock_base_entity_create_id, mock_model_status):
+def test_entity_get_status(mock_plugin, base_entity_model, alice_user,
+                           mock_base_entity_create_id, mock_model_status):
     # Save the entity
     mock_plugin.save.return_value = mock_base_entity_create_id
     base_entity_model.create(alice_user)
@@ -102,9 +102,9 @@ def test_entities_get_status(mock_plugin, base_entity_model, alice_user,
     assert status == mock_model_status
 
 
-def test_entities_raise_on_status_if_not_found(mock_plugin, base_entity_model,
-                                               alice_user,
-                                               mock_base_entity_create_id):
+def test_entity_raise_on_status_if_not_found(mock_plugin, base_entity_model,
+                                             alice_user,
+                                             mock_base_entity_create_id):
     from coalaip.exceptions import EntityNotFoundError
 
     # Save the entity
