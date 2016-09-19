@@ -134,12 +134,13 @@ class CoalaIpEntity:
                 the existing id of the entity on the persistence layer.
         """
 
-        if self._persist_id:
+        if self.persist_id:
             raise EntityPreviouslyCreatedError(self._persist_id)
 
         entity_data = self._to_format(data_format)
-        self._persist_id = self._plugin.save(entity_data, user=user)
-        return self._persist_id
+        create_id = self._plugin.save(entity_data, user=user)
+        self._persist_id = create_id
+        return create_id
 
     def get_status(self):
         """Get the current status of this entity, including it's state
@@ -155,9 +156,9 @@ class CoalaIpEntity:
                 persistence layer
         """
 
-        if self._persist_id is None:
+        if self.persist_id is None:
             return None
-        return self._plugin.get_status(self._persist_id)
+        return self._plugin.get_status(self.persist_id)
 
     def to_json(self):
         """Output this entity as a JSON-serializable dict.
@@ -233,9 +234,9 @@ class CoalaIpTransferrableEntity(CoalaIpEntity):
         if self._persist_id is None:
             raise EntityNotYetPersistedError(('Entities cannot be transferred '
                                               'until they have been persisted'))
-        else:
-            return self._plugin.transfer(self._persist_id, transfer_payload,
-                                         from_user=from_user, to_user=to_user)
+
+        return self._plugin.transfer(self.persist_id, transfer_payload,
+                                     from_user=from_user, to_user=to_user)
 
 
 class Creation(CoalaIpEntity):
