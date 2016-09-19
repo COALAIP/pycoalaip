@@ -36,7 +36,7 @@ class CoalaIpEntity:
             entity_type (str, keyword): the "@type" of the entity. Will
                 be inserted into the JSON-LD and IPLD representations
                 as-is, and as "type" in JSON representations.
-            ctx (str|str[]|dict[], keyword, optional): the context for
+            ctx (str|[str]|[dict], keyword, optional): the context for
                 the entity as either a string URL or array of string
                 URLs or dictionaries. See the `JSON-LD spec on contexts
                 <https://www.w3.org/TR/json-ld/#the-context>`_ for more
