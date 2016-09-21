@@ -17,22 +17,22 @@ def test_entity_raise_on_bad_instantiation(mock_plugin):
 
     plugin = NonSubclassPlugin()
     with raises(TypeError):
-        CoalaIpEntity(data={}, entity_type='type', plugin=plugin)
+        CoalaIpEntity(data={}, ld_type='type', plugin=plugin)
 
     # Test that instantiation raises if data not a dict
     with raises(EntityDataError):
-        CoalaIpEntity(data=1, entity_type='type', plugin=mock_plugin)
+        CoalaIpEntity(data=1, ld_type='type', plugin=mock_plugin)
 
     with raises(EntityDataError):
-        CoalaIpEntity(data=('name', 'id'), entity_type='type',
+        CoalaIpEntity(data=('name', 'id'), ld_type='type',
                       plugin=mock_plugin)
 
-    # Test that instantiation raises if entity_type not given as string
+    # Test that instantiation raises if ld_type not given as string
     with raises(EntityDataError):
-        CoalaIpEntity(data={}, entity_type=None, plugin=mock_plugin)
+        CoalaIpEntity(data={}, ld_type=None, plugin=mock_plugin)
 
     with raises(EntityDataError):
-        CoalaIpEntity(data={}, entity_type={'type': 'type'},
+        CoalaIpEntity(data={}, ld_type={'type': 'type'},
                       plugin=mock_plugin)
 
 
@@ -87,7 +87,7 @@ def test_entity_data_format_consistent(mock_plugin):
     from coalaip.models import CoalaIpEntity
     from tests.utils import assert_key_values_present_in_dict
     entity_data = {'test_data': 'test_data', 'extra_data': 'extra_data'}
-    entity_model = CoalaIpEntity(data=entity_data, entity_type='type',
+    entity_model = CoalaIpEntity(data=entity_data, ld_type='type',
                                  plugin=mock_plugin)
 
     assert_key_values_present_in_dict(entity_model.to_json(), **entity_data)
@@ -129,6 +129,8 @@ def test_work_init(mock_plugin, work_data, work_json,
     assert work.to_json() == work_json
     assert work.to_jsonld() == work_jsonld
 
+
+# FIXME: test work from data ignores given type key
 
 def test_work_init_raises_if_no_name(mock_plugin, work_data):
     from coalaip.models import Work

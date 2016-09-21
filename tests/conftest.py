@@ -35,7 +35,13 @@ def mock_model_status():
 @fixture
 def base_entity_model(mock_plugin):
     from coalaip.models import CoalaIpEntity
-    return CoalaIpEntity(data={}, entity_type='type', plugin=mock_plugin)
+
+    class BaseEntityModel(CoalaIpEntity):
+        @classmethod
+        def from_dict(*args, **kwargs):
+            return super().from_dict(*args, **kwargs)
+
+    return BaseEntityModel(data={}, ld_type='type', plugin=mock_plugin)
 
 
 @fixture

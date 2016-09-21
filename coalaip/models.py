@@ -5,6 +5,7 @@ formats, as well as creation and transferring through persistence layer
 plugin.
 """
 
+from abc import ABC, abstractmethod
 from copy import copy
 from coalaip import context_urls
 from coalaip.exceptions import (
@@ -14,33 +15,38 @@ from coalaip.exceptions import (
     EntityPreviouslyCreatedError,
 )
 from coalaip.plugin import AbstractPlugin
+from coalaip.utils import data_format_resolver
 
 
 DEFAULT_LD_CONTEXT = [context_urls.COALAIP, context_urls.SCHEMA]
 
 
-class CoalaIpEntity:
-    """Base class of all COALA IP entity models.
+class CoalaIpEntity(ABC):
+    """Abstract base class of all COALA IP entity models.
 
     Provides base functionality for all COALA IP entities, including
     entity creation (:meth:`~CoalaIpEntity.create`) and, if necessary,
     retrival of their status (:meth:`~CoalaIpEntity.get_status`), on
     the backing persistence layer provided by the given ledger plugin.
+
+    Subclasses \*must\* implement their own :meth:`from_data`
+    classmethod.
     """
 
-    def __init__(self, data, *, entity_type, ctx=DEFAULT_LD_CONTEXT, plugin):
+    def __init__(self, data, *, ld_type, ld_context=DEFAULT_LD_CONTEXT, plugin):
         """Initialize a :class:`~coalaip.models.CoalaIpEntity` instance.
 
         Args:
-            data (dict): a dict holding the model data for the entity
-            entity_type (str, keyword): the "@type" of the entity. Will
-                be inserted into the JSON-LD and IPLD representations
-                as-is, and as "type" in JSON representations.
-            ctx (str|[str]|[dict], keyword, optional): the context for
-                the entity as either a string URL or array of string
+            data (dict): a dict holding the model data for the entity.
+            ld_type (str, keyword): the "@type" of the entity. Will be
+                inserted into the JSON-LD representation as-is, and as
+                "type" in JSON and IPLD representations.
+            ld_context (str|[str|dict], keyword, optional): the context
+                for the entity as either a string URL or array of string
                 URLs or dictionaries. See the `JSON-LD spec on contexts
                 <https://www.w3.org/TR/json-ld/#the-context>`_ for more
-                information.
+                information. Only added as "@context" to JSON-LD
+                representation.
                 Defaults to adding COALA IP and schema.org to the
                 context.
             plugin (Plugin, keyword): the persistence layer plugin
@@ -48,9 +54,6 @@ class CoalaIpEntity:
         Raises:
             :class:`TypeError`: if the given 'plugin' does not subclass
                 :class:`~coalaip.plugin.AbstractPlugin`
-            :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' is not a dict or the given 'entity_type' is not
-                a string.
         """
 
         if not isinstance(plugin, AbstractPlugin):
@@ -60,19 +63,9 @@ class CoalaIpEntity:
                              'instance. Given a plugin of type '
                              "'{}' instead.".format(type(plugin))))
 
-        if not isinstance(entity_type, str):
-            raise EntityDataError(("'entity_type' must be provided as a "
-                                   'string to CoalaIpEntities. '
-                                   "Given '{}'".format(entity_type)))
-
-        if not isinstance(data, dict):
-            raise EntityDataError(("'data' must be provided as a dict"
-                                   'to CoalaIpEntities. Given '
-                                   "'{}'".format(data)))
-
         self._data = data
-        self._entity_type = entity_type
-        self._ld_context = ctx
+        self._ld_type = ld_type
+        self._ld_context = ld_context
         self._persist_id = None
         self._plugin = plugin
 
@@ -87,6 +80,47 @@ class CoalaIpEntity:
                                                 data=self.data)
 
     @classmethod
+    @abstractmethod
+    def from_data(cls, data, *, data_format='jsonld', plugin):
+        """Generic factory for instantiating :attr:`cls` entities
+        from their model data. Entities instantiated from this factory
+        have yet to be created on the backing persistence layer; see
+        :meth:`create` on persisting an entity.
+
+        Based on the :attr:`data_format`, the following are considered
+        special keys in :attr:`data` and will have different behaviour
+        depending on the ``data_type`` requested in later methods (e.g.
+        :meth:`~coalaip.models.CoalaIpEntity.create`):
+            - :attr:`data_format` == 'jsonld':
+                - '@type' denotes the Linked Data type of the entity
+                - '@context' denotes the JSON-LD context of the entity
+            - Otherwise:
+                - 'type' denotes the Linked Data type of the entity
+                - 'context' denotes the JSON-LD context of the entity
+
+        Args:
+            data (dict): a dict holding the model data for the entity.
+            data_format (str): the data format of :attr:`data`; must be
+                one of:
+                    - 'jsonld' (default)
+                    - 'json'
+                    - 'ipld'
+            plugin (Plugin, keyword): the persistence layer plugin
+
+        Returns:
+            :attr:`cls`: an instance of :attr:`cls` holding the
+            :attr:`data`
+        """
+
+        cls_from_format = data_format_resolver(data_format, {
+            'jsonld': cls._from_jsonld,
+            'json': cls._from_json,
+            'ipld': cls._from_ipld,
+        })
+
+        return cls_from_format(copy(data), plugin=plugin)
+
+    @classmethod
     def from_persist_id(cls, persist_id, *, force_load=False, plugin):
         """Generic factory for creating :attr:`cls` entity instances
         from their persisted ids.
@@ -94,13 +128,13 @@ class CoalaIpEntity:
         \*Note\*: by default, instances generated from this factory
         lazily load their data upon first access (see :meth:`data`),
         which may throw under various conditions. In general, most
-        usages of the models do not require access to their data
+        usages of the entities do not require access to their data
         (including internal methods), and thus the data does not usually
         need to be loaded unless :meth:`data` or one of the
         transformation methods, e.g. :meth:`to_json`, are explicitly
         used. If you know you will be using the data and want to avoid
         raising unexpected exceptions upon access, make sure to set
-        :attr:`force_load` or use :meth:`load` on the returned model
+        :attr:`force_load` or use :meth:`load` on the returned entity
         beforehand.
 
         Args:
@@ -113,15 +147,14 @@ class CoalaIpEntity:
             plugin (Plugin, keyword): the persistence layer plugin
 
         Returns:
-            :attr:`cls`: a generated model based on :attr:`persist_id`
+            :attr:`cls`: a generated entity based on :attr:`persist_id`
 
         Raises:
             if :attr:`force_load` is True, see :meth:`load`'s
             potentially raised exceptions
         """
 
-        entity = cls({}, plugin=plugin)  # Trick validation with empty dict
-        entity._data = None
+        entity = cls(None, plugin=plugin)
         entity._persist_id = persist_id
         if force_load:
             entity.load()
@@ -145,7 +178,7 @@ class CoalaIpEntity:
 
     @property
     def persist_id(self):
-        """str|None: the id of this entity on the persistence layer,
+        """str: the id of this entity on the persistence layer,
         if saved to one. Otherwise, None.
         """
         return self._persist_id
@@ -238,12 +271,12 @@ class CoalaIpEntity:
             if type_key in persist_data:
                 loaded_type = persist_data[type_key]
 
-                if loaded_type and loaded_type != self._entity_type:
+                if loaded_type and loaded_type != self._ld_type:
                     raise EntityDataError(
                         ('Loaded entity type ({loaded_type}) of entity '
                          'differs from existing entity type '
                          '({self_type})').format(loaded_type=loaded_type,
-                                                 self_type=self._entity_type)
+                                                 self_type=self._ld_type)
                     )
 
                 del model_data[type_key]
@@ -251,11 +284,11 @@ class CoalaIpEntity:
         if '@context' in persist_data:
             loaded_ctx = persist_data['@context']
 
-            if loaded_ctx and loaded_ctx != self._ctx:
+            if loaded_ctx and loaded_ctx != self._ld_context:
                 raise EntityDataError(
                     ('Loaded context ({loaded_ctx}) of entity differs from '
                      'existing context ({self_ctx})').format(
-                         loaded_ctx=loaded_ctx, self_ctx=self._ctx)
+                         loaded_ctx=loaded_ctx, self_ctx=self._ld_context)
                 )
 
             del model_data['@context']
@@ -274,7 +307,7 @@ class CoalaIpEntity:
         """
 
         json_model = copy(self.data)
-        json_model['type'] = self._entity_type
+        json_model['type'] = self._ld_type
         return json_model
 
     def to_jsonld(self):
@@ -287,7 +320,7 @@ class CoalaIpEntity:
 
         ld_model = copy(self.data)
         ld_model['@context'] = self._ld_context
-        ld_model['@type'] = self._entity_type
+        ld_model['@type'] = self._ld_type
         ld_model['@id'] = ''  # Specifying an empty @id resolves to the current document
         return ld_model
 
@@ -296,18 +329,40 @@ class CoalaIpEntity:
 
         raise NotImplementedError('to_ipld() has not been implemented yet')
 
+    @classmethod
+    def _from_jsonld(cls, data, *, plugin):
+        init_kwargs = {}
+        if '@type' in data:
+            init_kwargs['ld_type'] = data['@type']
+            del data['@type']
+        if '@context' in data:
+            init_kwargs['ld_context'] = data['@context']
+            del data['@context']
+        return cls(data, plugin=plugin, **init_kwargs)
+
+    @classmethod
+    def _from_json(cls, data, *, plugin):
+        init_kwargs = {}
+        if 'type' in data:
+            init_kwargs['ld_type'] = data['type']
+            del data['type']
+        if 'context' in data:
+            init_kwargs['ld_context'] = data['context']
+            del data['context']
+        return cls(data, plugin=plugin, **init_kwargs)
+
+    @classmethod
+    def _from_ipld(cls, data, *, plugin):
+        raise NotImplementedError(('Creating entities from IPLD has not been '
+                                   'implemented yet.'))
+
     def _to_format(self, data_format):
-        if data_format == 'jsonld':
-            return self.to_jsonld()
-        elif data_format == 'json':
-            return self.to_json()
-        elif data_format == 'ipld':
-            raise NotImplementedError(('Saving entities as IPLD has not been '
-                                       'implemented yet.'))
-        else:
-            raise ValueError(("'data_format' argument should be one of "
-                              "'json', 'jsonld', or 'ipld'. "
-                              "Given '{}'.").format(data_format))
+        to_format = data_format_resolver(data_format, {
+            'jsonld': self.to_jsonld,
+            'json': self.to_json,
+            'ipld': self.to_ipld,
+        })
+        return to_format()
 
 
 class CoalaIpTransferrableEntity(CoalaIpEntity):
@@ -349,30 +404,37 @@ class Creation(CoalaIpEntity):
 
     Base class for :class:`coalaip.models.Work`s and
     :class:`coalaip.models.Manifestation`s.
+
+    :class:`~coalaip.models.Creations`s are by default of ``@type``
+    'CreativeWork'.
     """
 
-    def __init__(self, data, *args, **kwargs):
-        """Initialize a :class:`~coalaip.models.Creation` instance
+    def __init__(self, data, *args, ld_type='CreativeWork', **kwargs):
+        super().__init__(data, ld_type=ld_type, *args, **kwargs)
+
+    @classmethod
+    def from_data(cls, data, *args, **kwargs):
+        """Generate a :class:`~coalaip.models.Creation` (or subclass)
+        entity from its model data, with schema validation.
+
+        See :meth:`~coalaip.models.CoalaIpEntity.from_data` for additional
+        parameters.
 
         Args:
             data (dict): a dict holding the model data for the
                 Creation. Must include at least a ``name`` key.
-            *args: see :class:`~coalaip.models.CoalaIpEntity`
-            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
 
         Raises:
-            :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' dict does not contain a string value for ``name``
+            :class:`~coalaip.exceptions.EntityDataError`: if
+                :attr:`data` does not pass validation
         """
 
         creation_name = data.get('name')
-
         if not isinstance(creation_name, str):
             raise EntityDataError(("'name' must be given as a string in the "
                                    "'data' of a Creation. Given "
                                    "'{}'".format(creation_name)))
-
-        super().__init__(data, *args, **kwargs)
+        return super().from_data(data, *args, **kwargs)
 
 
 class Work(Creation):
@@ -380,30 +442,32 @@ class Work(Creation):
 
     A distinct, abstract Creation whose existence is revealed through
     one or more :class:`~coalaip.models.Manifestation`s.
+
+    :class:`~coalaip.models.Work`s are always of ``@type``
+    'CreativeWork'
     """
 
-    def __init__(self, data, *args, **kwargs):
-        """Initialize a :class:`~coalaip.models.Work` instance.
+    def __init__(self, *args, **kwargs):
+        super().__init__(ld_type='CreativeWork', *args, **kwargs)
 
-        :class:`~coalaip.models.Work`s are always of ``entity_type``
-        'CreativeWork'.
+    @classmethod
+    def from_data(cls, data, *args, **kwargs):
+        """Generate a :class:`~coalaip.models.Work` (or subclass) entity
+        from its model data, with schema validation.
 
-        See also :class:`~coalaip.models.Creation`.
+        See :meth:`~coalaip.models.CoalaIpEntity.from_data` for additional
+        parameters.
 
         Args:
             data (dict): a dict holding the model data for the Work.
                 Must not include keys that indicate the model is a
                 :class:`~coalaip.models.Manifestation` (e.g.
                 ``manifestationOfWork`` or ``isManifestation == True``).
-                See :class:`~pycoalaip.models.Creation` for other model
-                requirements.
-            *args: see :class:`~coalaip.models.CoalaIpEntity`
-            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+                Ignores any given ``type`` or ``@type`` values.
 
         Raises:
-            :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' dict contains ``manifestationOfWork`` or a True
-                value for ``isManifestation``.
+            :class:`~coalaip.exceptions.EntityDataError`: if
+                :attr:`data` does not pass validation
         """
 
         if 'manifestationOfWork' in data:
@@ -413,58 +477,46 @@ class Work(Creation):
             raise EntityDataError(("'isManifestation' must not be True if "
                                    "given in the 'data' of Works"))
 
-        super().__init__(data, entity_type='CreativeWork', *args, **kwargs)
+        return super().from_data(data, *args, **kwargs)
 
 
 class Manifestation(Creation):
     """COALA IP's Manifestation entity.
 
     A perceivable manifestation of a :class:`~coalaip.models.Work`.
+
+    :class:`~coalaip.models.Manifestation`s are by default of
+    ``@type`` 'CreativeWork'.
     """
 
-    def __init__(self, data, *args, entity_type='CreativeWork', **kwargs):
-        """Initialize a :class:`~coalaip.models.Manifestation` instance
+    @classmethod
+    def from_data(cls, data, *args, **kwargs):
+        """Generate a :class:`~coalaip.models.Manifestation` (or
+        subclass) entity from its model data, with schema validation.
 
-        See also :class:`~coalaip.models.Creation`.
+        See :meth:`~coalaip.models.CoalaIpEntity.from_data` for additional
+        parameters.
 
         Args:
             data (dict): a dict holding the model data for the
                 Manifestation. Must include a ``manifestationOfWork``
                 key.
-                If an ``type`` or ``@type`` key is provided in the
-                'data', this type will be used as the ``entity_type``
-                rather than the 'entity_type' keyword argument.
                 See :class:`~pycoalaip.models.Creation` for other model
                 requirements.
-            entity_type (str, keyword, optional): the "@type" of the
-                Manifestation.
-                Defaults to 'CreativeWork'.
-            *args: see :class:`~coalaip.models.CoalaIpEntity`
-            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
 
         Raises:
-            :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' dict does not contain a string value for
-                ``manifestationOfWork``
+            :class:`~coalaip.exceptions.EntityDataError`: if
+                :attr:`data` does not pass validation
         """
-
         manifestation_of = data.get('manifestationOfWork')
-
         if not isinstance(manifestation_of, str):
             raise EntityDataError(("'manifestationOfWork' must be given as a "
                                    "string in the 'data' of a Manifestation. "
                                    "Given '{}'".format(manifestation_of)))
 
-        # If the entity type is already specified as part of the data, use that
-        # instead of 'CreativeWork'
-        for type_key in ['type', '@type']:
-            if type_key in data:
-                entity_type = data[type_key]
-                del data[type_key]
-                break
 
         data['isManifestation'] = True
-        super().__init__(data, entity_type=entity_type, *args, **kwargs)
+        return super().from_data(data, *args, **kwargs)
 
 
 class Right(CoalaIpTransferrableEntity):
@@ -476,34 +528,36 @@ class Right(CoalaIpTransferrableEntity):
 
     More specific rights, such as PlaybackRights, StreamRights, etc
     should be implemented as subclasses of this class.
+
+    By default, :class:`~coalaip.models.Rights`s are of ``@type``
+    'Right' and only include the COALA IP context, as Rights are not
+    dependent on schema.org.
     """
 
-    def __init__(self, data, *args, entity_type='Right',
-                 ctx=context_urls.COALAIP, **kwargs):
-        """Initialize a :class:`~coalaip.models.Right` instance
+    def __init__(self, *args, ld_type='Right', ld_context=context_urls.COALAIP,
+                 **kwargs):
+        super().__init__(ld_type='CreativeWork', ld_context=ld_context,
+                         *args, **kwargs)
+
+    @classmethod
+    def from_data(cls, data, *args, **kwargs):
+        """Generate a :class:`~coalaip.models.Right` (or subclass) entity
+        from its model data, with schema validation.
+
+        See :meth:`~coalaip.models.CoalaIpEntity.from_data` for additional
+        parameters.
 
         Args:
             data (dict): a dict holding the model data for the Right.
-                Must include either a ``rightsOf`` or ``allowedBy`` key:
-                ``rightsOf`` indicates that the Right contains full
-                rights to an existing Manifestation or Work while
-                ``allowedBy`` indicates that the Right is derived from
-                and allowed by a source Right (note that the two
-                \*must not\* be provided together).
-            entity_type (str, keyword, optional): the "@type" of the
-                Manifestation.
-                Defaults to 'Right'.
-            ctx (str|str[]|dict[], keyword, optional): the context for
-                the Right.
-                Defaults to only only COALA IP, as Rights are not
-                dependent on schema.org.
-            *args: see :class:`~coalaip.models.CoalaIpEntity`
-            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+                Must include either a ``rightsOf`` or ``allowedBy`` key
+                (but not both): ``rightsOf`` indicates that the Right
+                contains full rights to an existing Manifestation or
+                Work while ``allowedBy`` indicates that the Right is
+                derived from and allowed by a source Right.
 
         Raises:
-            :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' dict does not contain exactly one of ``rightsOf``
-                or ``allowedBy`` as a string value.
+            :class:`~coalaip.exceptions.EntityDataError`: if
+                :attr:`data` does not pass validation
         """
 
         rights_of = data.get('rightsOf')
@@ -521,8 +575,7 @@ class Right(CoalaIpTransferrableEntity):
                                    "'allowedBy' can be given in the 'data' of "
                                    'a Right.'))
 
-        super().__init__(data, entity_type=entity_type, ctx=ctx, *args,
-                         **kwargs)
+        return super().from_data(data, *args, **kwargs)
 
     def transfer(self, rights_assignment_data=None, *, from_user, to_user,
                  rights_assignment_format='jsonld'):
@@ -530,14 +583,14 @@ class Right(CoalaIpTransferrableEntity):
         persistence layer.
 
         Args:
-            rights_assignment_data (dict): a dict holding the model data for
-                the RightsAssignment
-            from_user (any): a user based on the model specified by the
-                persistence layer
-            to_user (any): a user based on the model specified by the
-                persistence layer
-            rights_assignment_format (str): the data format of the
-                created entity; must be one of:
+            rights_assignment_data (dict): a dict holding the model data
+                for the RightsAssignment
+            from_user (any, keyword): a user based on the model specified
+                by the persistence layer
+            to_user (any, keyword): a user based on the model specified
+                by the persistence layer
+            rights_assignment_format (str, keyword, optional): the data
+                format of the created entity; must be one of:
                     - 'jsonld' (default)
                     - 'json'
                     - 'ipld'
@@ -561,32 +614,40 @@ class Copyright(Right):
 
     The full entitlement of Copyright to a :class:`~coalaip.models.Work`
     or :class:`~coalaip.models.Manifestation`.
+
+    :class:`~coalaip.models.Copyright`s are always of ``@type``
+    'Copyright' and by default only include the COALA IP context, as
+    Copyrights are not dependent on schema.org.
     """
 
-    def __init__(self, data, *args, **kwargs):
-        """Initialize a :class:`~coalaip.models.Copyright` instance
+    def __init__(self, *args, **kwargs):
+        super().__init__(ld_type='Copyright', *args, **kwargs)
 
-        :class:`~coalaip.models.Copyright`s are always of
-        ``entity_type`` 'Copyright'.
+    @classmethod
+    def from_data(cls, data, *args, **kwargs):
+        """Generate a :class:`~coalaip.models.Copyright` (or subclass)
+        entity from its model data, with schema validation.
+
+        See :meth:`~coalaip.models.CoalaIpEntity.from_data` for additional
+        parameters.
 
         Args:
             data (dict): a dict holding the model data for the
                 Copyright. Must include at least a ``rightsOf`` key.
                 See :class:`~pycoalaip.models.Right` for other model
                 requirements.
-            *args: see :class:`~coalaip.models.CoalaIpEntity`
-            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+                Ignores any given ``type`` or ``@type`` values.
 
         Raises:
-            :class:`~coalaip.exceptions.EntityDataError`: if the given
-                'data' does not contain a string value for ``rightsOf``
+            :class:`~coalaip.exceptions.EntityDataError`: if
+                :attr:`data` does not pass validation
         """
 
         if 'allowedBy' in data:
             raise EntityDataError(("'allowedBy' must not be given in the "
                                    "'data' of Copyrights"))
 
-        super().__init__(data, entity_type='Copyright', *args, **kwargs)
+        return super().from_data(data, *args, **kwargs)
 
 
 class RightsAssignment(CoalaIpEntity):
@@ -598,21 +659,30 @@ class RightsAssignment(CoalaIpEntity):
     RightsAssignments may only be persisted in the underlying
     persistence layer through transfer operations, and hence cannot be
     created normally through ``.create()``.
+
+    :class:`~coalaip.models.RightsAssignment`s are always of ``@type``
+    'RightsAssignment' and by default only include the COALA IP
+    context, as Copyrights are not dependent on schema.org.
     """
 
-    def __init__(self, data, *args, **kwargs):
-        """Initialize a :class:`~coalaip.models.RightsAssignment`
-        instance
+    def __init__(self, *args, **kwargs):
+        super().__init__(ld_type='RightsTransferAction', *args, **kwargs)
+
+    @classmethod
+    def from_data(cls, data, *args, **kwargs):
+        """Generate a :class:`~coalaip.models.RightsAssignment` (or subclass)
+        entity from its model data, with schema validation.
+
+        See :meth:`~coalaip.models.CoalaIpEntity.from_data` for additional
+        parameters.
 
         Args:
             data (dict): a dict holding the model data for the
-                RightsAssignment
-            *args: see :class:`~coalaip.models.CoalaIpEntity`
-            **kwargs: see :class:`~coalaip.models.CoalaIpEntity`
+                RightsAssignment.
+                Ignores any given ``type`` or ``@type`` values.
         """
 
-        super().__init__(data, entity_type='RightsTransferAction', *args,
-                         **kwargs)
+        return super().from_data(data, *args, **kwargs)
 
     def create(self, *args, **kwargs):
         """Removes the ability to persist RightsAssignments normally.
