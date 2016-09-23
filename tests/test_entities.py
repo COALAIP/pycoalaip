@@ -3,145 +3,213 @@
 from pytest import mark, raises
 
 
-def test_entity_init(mock_plugin, base_model, mock_entity_class):
-    entity = mock_entity_class(base_model, plugin=mock_plugin)
+ALL_ENTITIES = [
+    'work_entity',
+    'manifestation_entity',
+    'right_entity',
+    'copyright_entity',
+    'rights_assignment_entity',
+]
+
+CREATABLE_ENTITIES = [e for e in ALL_ENTITIES
+                      if e != 'rights_assignment_entity']
+
+CLS_FOR_ENTITY = {
+    'work_entity': 'Work',
+    'manifestation_entity': 'Manifestation',
+    'right_entity': 'Right',
+    'copyright_entity': 'Copyright',
+    'rights_assignment_entity': 'RightsAssignment',
+}
+
+ALL_ENTITY_CLS = [
+    'Work',
+    'Manifestation',
+    'Right',
+    'Copyright',
+    'RightsAssignment',
+]
+
+DATA_NAME_FOR_ENTITY_CLS = {
+    'Work': 'work_data',
+    'Manifestation': 'manifestation_data',
+    'Copyright': 'copyright_data',
+    'Right': 'right_data',
+    'RightsAssignment': 'rights_assignment_data',
+}
+
+JSON_NAME_FOR_ENTITY_CLS = {
+    'Work': 'work_json',
+    'Manifestation': 'manifestation_json',
+    'Copyright': 'copyright_json',
+    'Right': 'right_json',
+    'RightsAssignment': 'rights_assignment_json',
+}
+
+JSONLD_NAME_FOR_ENTITY_CLS = {
+    'Work': 'work_jsonld',
+    'Manifestation': 'manifestation_jsonld',
+    'Copyright': 'copyright_jsonld',
+    'Right': 'right_jsonld',
+    'RightsAssignment': 'rights_assignment_jsonld',
+}
+
+
+def get_entity_cls(entity_cls_name):
+    import importlib
+    entities = importlib.import_module('coalaip.entities')
+    entity_cls = getattr(entities, entity_cls_name)
+    return entity_cls
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_init(mock_plugin, base_model, entity_cls_name):
+    entity_cls = get_entity_cls(entity_cls_name)
+    entity = entity_cls(base_model, plugin=mock_plugin)
     assert entity.model == base_model
+    assert entity.data == base_model.data
     assert entity.plugin == mock_plugin
     assert entity.persist_id is None
 
 
-def test_entity_raises_on_bad_init(mock_plugin, base_model, mock_entity_class):
-    # Test that instantiation raises if plugin not subclassed from
-    # AbstractPlugin
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+@mark.parametrize('bad_model', [1, ('name', 'id'), {'name': 'name'}])
+def test_entity_init_raises_on_non_model(mock_plugin, bad_model,
+                                         entity_cls_name):
+    entity_cls = get_entity_cls(entity_cls_name)
     with raises(TypeError):
-        mock_entity_class(model=base_model, plugin=None)
+        entity_cls(model=bad_model, plugin=mock_plugin)
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_init_raises_on_no_plugin(base_model, entity_cls_name):
+    entity_cls = get_entity_cls(entity_cls_name)
+    with raises(TypeError):
+        entity_cls(model=base_model, plugin=None)
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_init_raises_on_non_subclassed_plugin(base_model,
+                                                     entity_cls_name):
+    entity_cls = get_entity_cls(entity_cls_name)
 
     class NonSubclassPlugin():
         pass
 
+    # Instantiation should raise if plugin not subclassed from AbstractPlugin
     with raises(TypeError):
-        mock_entity_class(model=base_model, plugin=NonSubclassPlugin())
-
-    # Test that instantiation raises if model is not a model
-    with raises(TypeError):
-        mock_entity_class(model=1, plugin=mock_plugin)
-
-    with raises(TypeError):
-        mock_entity_class(model=('name', 'id'), plugin=mock_plugin)
+        entity_cls(model=base_model, plugin=NonSubclassPlugin())
 
 
-def test_entity_create_raises_on_bad_format(mock_entity, alice_user):
-    with raises(ValueError):
-        mock_entity.create(alice_user, 'bad_format')
-
-
-def test_entity_raises_on_creation_error(mock_plugin, mock_entity, alice_user):
-    from coalaip.exceptions import EntityCreationError
-
-    mock_creation_error = 'mock_creation_error'
-    mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
-    with raises(EntityCreationError) as excinfo:
-        mock_entity.create(alice_user)
-
-    assert mock_creation_error == excinfo.value.error
-
-
-def test_entity_raises_on_creation_if_already_created(
-        mock_plugin, mock_entity, alice_user, mock_entity_create_id):
-    from coalaip.exceptions import EntityPreviouslyCreatedError
-
-    # Save the entity
-    mock_plugin.save.return_value = mock_entity_create_id
-    mock_entity.create(alice_user)
-
-    # Test create raises on already persisted entity
-    with raises(EntityPreviouslyCreatedError) as excinfo:
-        mock_entity.create(alice_user)
-    assert mock_entity_create_id == excinfo.value.existing_id
-
-
-def test_entity_have_none_status_if_not_persisted(mock_plugin, mock_entity):
-    status = mock_entity.status
-    assert status is None
-    mock_plugin.get_status.assert_not_called()
-
-
-def test_entity_data_format_consistent(mock_plugin, mock_entity_class):
-    from tests.utils import assert_key_values_present_in_dict
-    entity_data = {'test_data': 'test_data', 'extra_data': 'extra_data'}
-    entity = mock_entity_class.from_data(data=entity_data, plugin=mock_plugin)
-
-    assert_key_values_present_in_dict(entity.to_json(), **entity_data)
-    assert_key_values_present_in_dict(entity.to_jsonld(), **entity_data)
-
-
-def test_entity_get_status(mock_plugin, mock_entity, alice_user,
-                           mock_entity_create_id, mock_entity_status):
-    # Save the entity
-    mock_plugin.save.return_value = mock_entity_create_id
-    mock_entity.create(alice_user)
-
-    # Test status returned
-    mock_plugin.get_status.return_value = mock_entity_status
-    status = mock_entity.status
-    assert mock_plugin.get_status.call_count == 1
-    assert status == mock_entity_status
-
-
-def test_entity_raises_on_status_if_not_found(mock_plugin, mock_entity,
-                                              alice_user,
-                                              mock_entity_create_id):
-    from coalaip.exceptions import EntityNotFoundError
-
-    # Save the entity
-    mock_plugin.save.return_value = mock_entity_create_id
-    mock_entity.create(alice_user)
-
-    mock_plugin.get_status.side_effect = EntityNotFoundError()
-    with raises(EntityNotFoundError):
-        mock_entity.status
-
-
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
 @mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format,data_name', [
-    (None, 'work_data'),
-    ('json', 'work_json'),
-    ('jsonld', 'work_jsonld'),
-    mark.skip(('ipld', 'work_ipld')),
-])
-def test_work_init_from_data(mock_plugin, data_format, data_name,
-                             use_data_format_enum, work_json, work_jsonld,
-                             request):
-    from coalaip.entities import Work
-    data = request.getfixturevalue(data_name)
+@mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
+def test_entity_init_from_data(mock_plugin, data_format, use_data_format_enum,
+                               entity_cls_name, request):
+    entity_cls = get_entity_cls(entity_cls_name)
+    data = request.getfixturevalue(DATA_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    json = request.getfixturevalue(JSON_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    jsonld = request.getfixturevalue(JSONLD_NAME_FOR_ENTITY_CLS[entity_cls_name])
 
     kwargs = {}
-    if data_format:
+    if data_format is None:
+        kwargs['data'] = data
+    else:
+        if data_format == 'json':
+            kwargs['data'] = json
+        elif data_format == 'jsonld':
+            kwargs['data'] = jsonld
+
         if use_data_format_enum:
             from tests.utils import get_data_format_enum_member
             data_format = get_data_format_enum_member(data_format)
         kwargs['data_format'] = data_format
 
-    work = Work.from_data(data, plugin=mock_plugin, **kwargs)
-    assert work.persist_id is None
-    assert work.to_json() == work_json
-    assert work.to_jsonld() == work_jsonld
+    entity = entity_cls.from_data(plugin=mock_plugin, **kwargs)
+    assert entity.persist_id is None
+    assert entity.to_json() == json
+    assert entity.to_jsonld() == jsonld
 
 
-def test_work_init_from_data_ignores_diff_type(mock_plugin, work_data,
-                                               work_jsonld,
-                                               mock_creation_type):
-    from coalaip.entities import Work
-    work_data['@type'] = mock_creation_type
-    work = Work.from_data(work_data, plugin=mock_plugin)
+@mark.parametrize('entity_cls_name,entity_data_name', [
+    (e_cls, DATA_NAME_FOR_ENTITY_CLS[e_cls]) for e_cls in ALL_ENTITY_CLS
+])
+def test_entity_from_data_consistent(mock_plugin, entity_cls_name,
+                                     entity_data_name, request):
+    from tests.utils import assert_key_values_present_in_dict
+    entity_cls = get_entity_cls(entity_cls_name)
+    entity_data = request.getfixturevalue(entity_data_name)
 
-    # Test work ignores specified @type
-    assert work.to_jsonld() == work_jsonld
-    assert work.to_jsonld()['@type'] != mock_creation_type
+    entity = entity_cls.from_data(data=entity_data, plugin=mock_plugin)
+
+    assert_key_values_present_in_dict(entity.to_json(), **entity_data)
+    assert_key_values_present_in_dict(entity.to_jsonld(), **entity_data)
 
 
-def test_work_init_from_data_other_context(mock_plugin, work_data,
-                                           work_jsonld, mock_creation_type):
+@mark.parametrize('entity_cls_name', ['Work', 'Copyright', 'RightsAssignment'])
+@mark.parametrize('use_data_format_enum', [True, False])
+@mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])
+def test_entity_with_static_type_ignores_diff_type(mock_plugin, data_format,
+                                                   use_data_format_enum,
+                                                   entity_cls_name,
+                                                   mock_entity_type, request):
+    entity_cls = get_entity_cls(entity_cls_name)
+
+    kwargs = {}
+    if data_format:
+        if data_format == 'json':
+            data = request.getfixturevalue(JSON_NAME_FOR_ENTITY_CLS[entity_cls_name])
+            data['type'] = mock_entity_type
+        elif data_format == 'jsonld':
+            data = request.getfixturevalue(JSONLD_NAME_FOR_ENTITY_CLS[entity_cls_name])
+            data['@type'] = mock_entity_type
+
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
+        kwargs['data_format'] = data_format
+    kwargs['data'] = data
+
+    entity = entity_cls.from_data(plugin=mock_plugin, **kwargs)
+
+    # Test entity ignores specified @type
+    assert entity.model.ld_type != mock_entity_type
+    assert entity.to_jsonld()['@type'] != mock_entity_type
+
+
+@mark.parametrize('entity_cls_name', ['Manifestation', 'Right'])
+@mark.parametrize('use_data_format_enum', [True, False])
+@mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])
+def test_entity_with_static_type_keeps_diff_type(mock_plugin, data_format,
+                                                 use_data_format_enum,
+                                                 entity_cls_name,
+                                                 mock_entity_type, request):
+    entity_cls = get_entity_cls(entity_cls_name)
+
+    kwargs = {}
+    if data_format:
+        if data_format == 'json':
+            data = request.getfixturevalue(JSON_NAME_FOR_ENTITY_CLS[entity_cls_name])
+            data['type'] = mock_entity_type
+        elif data_format == 'jsonld':
+            data = request.getfixturevalue(JSONLD_NAME_FOR_ENTITY_CLS[entity_cls_name])
+            data['@type'] = mock_entity_type
+
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
+        kwargs['data_format'] = data_format
+    kwargs['data'] = data
+
+    entity = entity_cls.from_data(plugin=mock_plugin, **kwargs)
+
+    # Test entity ignores specified @type
+    assert entity.model.ld_type == mock_entity_type
+    assert entity.to_jsonld()['@type'] == mock_entity_type
+
+
+def test_entity_init_from_data_other_context(mock_plugin, work_data,
+                                             work_jsonld, mock_entity_type):
     from coalaip.entities import Work
     work_data['@context'] = 'other_context'
     work_jsonld['@context'] = 'other_context'
@@ -149,6 +217,122 @@ def test_work_init_from_data_other_context(mock_plugin, work_data,
 
     # Test work keeps @context
     assert work.to_jsonld() == work_jsonld
+
+
+@mark.parametrize('entity_name', CREATABLE_ENTITIES)
+@mark.parametrize('use_data_format_enum', [True, False])
+@mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
+def test_entity_create(mock_plugin, alice_user, data_format,
+                       use_data_format_enum, entity_name,
+                       mock_entity_create_id, request):
+    entity = request.getfixturevalue(entity_name)
+    entity_cls_name = CLS_FOR_ENTITY[entity_name]
+
+    mock_plugin.save.return_value = mock_entity_create_id
+
+    if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format_arg = get_data_format_enum_member(data_format)
+        else:
+            data_format_arg = data_format
+        persist_id = entity.create(alice_user, data_format_arg)
+    else:
+        persist_id = entity.create(alice_user)
+    assert mock_plugin.save.call_count == 1
+    assert persist_id == mock_entity_create_id
+    assert persist_id == entity.persist_id
+
+    if not data_format or data_format == 'jsonld':
+        data = request.getfixturevalue(JSONLD_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    elif data_format == 'json':
+        data = request.getfixturevalue(JSON_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    mock_plugin.save.assert_called_with(data, user=alice_user)
+
+
+@mark.parametrize('entity_name', CREATABLE_ENTITIES)
+def test_entity_create_raises_on_bad_format(alice_user, entity_name, request):
+    entity = request.getfixturevalue(entity_name)
+    with raises(ValueError):
+        entity.create(alice_user, 'bad_format')
+
+
+@mark.parametrize('entity_name', CREATABLE_ENTITIES)
+def test_entity_raises_on_creation_error(mock_plugin, alice_user, entity_name,
+                                         request):
+    from coalaip.exceptions import EntityCreationError
+    mock_creation_error = 'mock_creation_error'
+    mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
+
+    entity = request.getfixturevalue(entity_name)
+    with raises(EntityCreationError) as excinfo:
+        entity.create(alice_user)
+    assert mock_creation_error == excinfo.value.error
+
+
+@mark.parametrize('entity_name', CREATABLE_ENTITIES)
+def test_entity_raises_on_creation_if_already_created(
+        mock_plugin, alice_user, entity_name, mock_entity_create_id, request):
+    from coalaip.exceptions import EntityPreviouslyCreatedError
+    entity = request.getfixturevalue(entity_name)
+
+    # Save the entity
+    mock_plugin.save.return_value = mock_entity_create_id
+    entity.create(alice_user)
+
+    # Test create raises on already persisted entity
+    with raises(EntityPreviouslyCreatedError) as excinfo:
+        entity.create(alice_user)
+    assert mock_entity_create_id == excinfo.value.existing_id
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_have_none_status_if_not_persisted(mock_plugin, entity_name,
+                                                  request):
+    entity = request.getfixturevalue(entity_name)
+    status = entity.status
+    assert status is None
+    mock_plugin.get_status.assert_not_called()
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_get_status(mock_plugin, alice_user, entity_name,
+                           mock_entity_create_id, mock_entity_status, request):
+    entity = request.getfixturevalue(entity_name)
+
+    entity.persist_id = mock_entity_create_id
+
+    # Test status returned
+    mock_plugin.get_status.return_value = mock_entity_status
+    status = entity.status
+    assert mock_plugin.get_status.call_count == 1
+    assert status == mock_entity_status
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_raises_on_status_if_not_found(mock_plugin, alice_user,
+                                              entity_name,
+                                              mock_entity_create_id, request):
+    from coalaip.exceptions import EntityNotFoundError
+    entity = request.getfixturevalue(entity_name)
+
+    entity.persist_id = mock_entity_create_id
+
+    mock_plugin.get_status.side_effect = EntityNotFoundError()
+    with raises(EntityNotFoundError):
+        entity.status
+
+
+@mark.parametrize('entity_name', [
+    'work_entity',
+    'manifestation_entity',
+    'rights_assignment_entity',
+])
+def test_non_transferrable_entity_actually_non_transferrable(entity_name,
+                                                             request):
+    entity = request.getfixturevalue(entity_name)
+    with raises(AttributeError):
+        entity.transfer()
 
 
 def test_work_init_from_data_raises_if_no_name(mock_plugin, work_data):
@@ -176,204 +360,30 @@ def test_work_init_from_data_raises_if_manifestation(mock_plugin, work_data):
         Work.from_data(manifestation_of_data, plugin=mock_plugin)
 
 
-@mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format,model_data_name', [
-    (None, 'work_jsonld'),
-    ('json', 'work_json'),
-    ('jsonld', 'work_jsonld'),
-    mark.skip(('ipld', 'work_ipld')),
-])
-def test_work_create(mock_plugin, work_entity, alice_user, data_format,
-                     use_data_format_enum, model_data_name,
-                     mock_work_create_id, request):
-    mock_plugin.save.return_value = mock_work_create_id
-
-    if data_format:
-        if use_data_format_enum:
-            from tests.utils import get_data_format_enum_member
-            data_format = get_data_format_enum_member(data_format)
-        persist_id = work_entity.create(alice_user, data_format)
-    else:
-        persist_id = work_entity.create(alice_user)
-    assert mock_plugin.save.call_count == 1
-    assert persist_id == mock_work_create_id
-    assert persist_id == work_entity.persist_id
-
-    model_data = request.getfixturevalue(model_data_name)
-    mock_plugin.save.assert_called_with(model_data, user=alice_user)
-
-
-def test_work_non_transferrable(work_entity):
-    with raises(AttributeError):
-        work_entity.transfer()
-
-
-@mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format,data_factory_name', [
-    (None, 'manifestation_data_factory'),
-    ('json', 'manifestation_json_factory'),
-    ('jsonld', 'manifestation_jsonld_factory'),
-    mark.skip(('ipld', 'manifestation_ipld_factory')),
-])
-def test_manifestation_init(mock_plugin, data_format, data_factory_name,
-                            use_data_format_enum, manifestation_json_factory,
-                            manifestation_jsonld_factory, request):
-    from coalaip.entities import Manifestation
-    data_factory = request.getfixturevalue(data_factory_name)
-
-    kwargs = {}
-    if data_format:
-        if use_data_format_enum:
-            from tests.utils import get_data_format_enum_member
-            data_format = get_data_format_enum_member(data_format)
-        kwargs['data_format'] = data_format
-
-    data = data_factory()
-    manifestation_json = manifestation_json_factory()
-    manifestation_jsonld = manifestation_jsonld_factory()
-
-    manifestation = Manifestation.from_data(data, plugin=mock_plugin, **kwargs)
-    assert manifestation.persist_id is None
-    assert manifestation.to_json() == manifestation_json
-    assert manifestation.to_jsonld() == manifestation_jsonld
-
-
-@mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format,type_key', [
-    ('json', 'type'),
-    ('jsonld', '@type'),
-    mark.skip(('ipld', 'type')),
-])
-def test_manifestation_init_other_type(mock_plugin, manifestation_data_factory,
-                                       data_format, type_key,
-                                       use_data_format_enum,
-                                       manifestation_json_factory,
-                                       manifestation_jsonld_factory,
-                                       mock_creation_type):
-    from coalaip.entities import Manifestation
-
-    if use_data_format_enum:
-        from tests.utils import get_data_format_enum_member
-        data_format = get_data_format_enum_member(data_format)
-
-    manifestation_data = manifestation_data_factory(data={
-        type_key: mock_creation_type
-    })
-    manifestation_json = manifestation_json_factory(data={
-        'type': mock_creation_type
-    })
-    manifestation_jsonld = manifestation_jsonld_factory(data={
-        '@type': mock_creation_type
-    })
-
-    manifestation = Manifestation.from_data(manifestation_data,
-                                            plugin=mock_plugin,
-                                            data_format=data_format)
-    assert manifestation.to_json() == manifestation_json
-    assert manifestation.to_jsonld() == manifestation_jsonld
-
-
-def test_manifestation_init_raises_if_no_name(mock_plugin,
-                                              manifestation_data_factory):
+def test_manifestation_init_raises_if_no_name(mock_plugin, manifestation_data):
     from coalaip.entities import Manifestation
     from coalaip.exceptions import ModelDataError
-
-    manifestation_data = manifestation_data_factory()
     del manifestation_data['name']
+    with raises(ModelDataError):
+        Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
+
+def test_manifestation_init_raises_without_manifestation_of(
+        mock_plugin, manifestation_data):
+    from coalaip.entities import Manifestation
+    from coalaip.exceptions import ModelDataError
+    del manifestation_data['manifestationOfWork']
     with raises(ModelDataError):
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
 def test_manifestation_init_raises_without_str_manifestation_of(
-        mock_plugin, manifestation_data_factory):
+        mock_plugin, manifestation_data):
     from coalaip.entities import Manifestation
     from coalaip.exceptions import ModelDataError
-
-    manifestation_data = manifestation_data_factory()
-
-    del manifestation_data['manifestationOfWork']
-    with raises(ModelDataError):
-        Manifestation.from_data(manifestation_data, plugin=mock_plugin)
-
     manifestation_data['manifestationOfWork'] = {}
     with raises(ModelDataError):
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
-
-
-@mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format,model_data_factory_name', [
-    (None, 'manifestation_jsonld_factory'),
-    ('json', 'manifestation_json_factory'),
-    ('jsonld', 'manifestation_jsonld_factory'),
-    mark.skip(('ipld', 'manifestation_ipld_factory')),
-])
-def test_manifestation_create(mock_plugin, manifestation_entity, alice_user,
-                              data_format, model_data_factory_name,
-                              use_data_format_enum,
-                              mock_manifestation_create_id, request):
-    mock_plugin.save.return_value = mock_manifestation_create_id
-
-    if data_format:
-        if use_data_format_enum:
-            from tests.utils import get_data_format_enum_member
-            data_format = get_data_format_enum_member(data_format)
-        persist_id = manifestation_entity.create(alice_user, data_format)
-    else:
-        persist_id = manifestation_entity.create(alice_user)
-    assert mock_plugin.save.call_count == 1
-    assert persist_id == mock_manifestation_create_id
-    assert persist_id == manifestation_entity.persist_id
-
-    model_data_factory = request.getfixturevalue(model_data_factory_name)
-    model_data = model_data_factory()
-
-    mock_plugin.save.assert_called_with(model_data, user=alice_user)
-
-
-def test_manifestation_non_transferrable(manifestation_entity):
-    with raises(AttributeError):
-        manifestation_entity.transfer()
-
-
-@mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
-@mark.parametrize('right_cls,data_factory_name,json_factory_name, jsonld_factory_name', [
-    ('Right', 'right_data_factory', 'right_json_factory', 'right_jsonld_factory'),
-    ('Copyright', 'copyright_data_factory', 'copyright_json_factory', 'copyright_jsonld_factory'),
-])
-def test_right_init(mock_plugin, data_format, right_cls, data_factory_name,
-                    json_factory_name, jsonld_factory_name,
-                    use_data_format_enum, request):
-    import importlib
-    entities = importlib.import_module('coalaip.entities')
-    right_cls = getattr(entities, right_cls)
-    data_factory = request.getfixturevalue(data_factory_name)
-    json_factory = request.getfixturevalue(json_factory_name)
-    jsonld_factory = request.getfixturevalue(jsonld_factory_name)
-
-    right_data = data_factory()
-    right_json = json_factory()
-    right_jsonld = jsonld_factory()
-
-    kwargs = {}
-    if data_format is None:
-        kwargs['data'] = right_data
-    else:
-        if data_format == 'json':
-            kwargs['data'] = right_json
-        elif data_format == 'jsonld':
-            kwargs['data'] = right_jsonld
-
-        if use_data_format_enum:
-            from tests.utils import get_data_format_enum_member
-            data_format = get_data_format_enum_member(data_format)
-        kwargs['data_format'] = data_format
-
-    right = right_cls.from_data(plugin=mock_plugin, **kwargs)
-    assert right.persist_id is None
-    assert right.to_json() == right_json
-    assert right.to_jsonld() == right_jsonld
 
 
 def test_right_init_raises_without_str_allowed_by(mock_plugin,
@@ -430,44 +440,6 @@ def test_right_init_raises_with_both_rights_of_allowed_by(
         Right.from_data(right_data, plugin=mock_plugin)
 
 
-@mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('right_type,right_entity_name,mock_create_id_name', [
-    ('right', 'right_entity', 'mock_right_create_id'),
-    ('copyright', 'copyright_entity', 'mock_copyright_create_id'),
-])
-@mark.parametrize('data_format,model_data_factory_name_template', [
-    ('', '{right_type}_jsonld_factory'),
-    ('json', '{right_type}_json_factory'),
-    ('jsonld', '{right_type}_jsonld_factory'),
-    mark.skip(('ipld', '{right_type}_ipld_factory')),
-])
-def test_copyright_create(mock_plugin, alice_user, right_type,
-                          right_entity_name, mock_create_id_name,
-                          data_format, model_data_factory_name_template,
-                          use_data_format_enum, request):
-    model_data_factory_name = model_data_factory_name_template.format(right_type=right_type)
-
-    model_data_factory = request.getfixturevalue(model_data_factory_name)
-    right_entity = request.getfixturevalue(right_entity_name)
-    mock_create_id = request.getfixturevalue(mock_create_id_name)
-
-    mock_plugin.save.return_value = mock_create_id
-
-    if data_format:
-        if use_data_format_enum:
-            from tests.utils import get_data_format_enum_member
-            data_format = get_data_format_enum_member(data_format)
-        persist_id = right_entity.create(alice_user, data_format)
-    else:
-        persist_id = right_entity.create(alice_user)
-    assert mock_plugin.save.call_count == 1
-    assert persist_id == mock_create_id
-    assert persist_id == right_entity.persist_id
-
-    model_data = model_data_factory()
-    mock_plugin.save.assert_called_with(model_data, user=alice_user)
-
-
 @mark.parametrize('right_entity_name,mock_create_id_name', [
     ('right_entity', 'mock_right_create_id'),
     ('copyright_entity', 'mock_copyright_create_id'),
@@ -479,25 +451,20 @@ def test_copyright_create(mock_plugin, alice_user, right_type,
     ('jsonld', 'rights_assignment_jsonld'),
     mark.skip(('ipld', 'rights_assignment_ipld')),
 ])
-def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
-                                 rights_assignment_data, right_entity_name,
-                                 mock_create_id_name, data_format,
-                                 rights_assignment_data_name,
-                                 use_data_format_enum,
-                                 mock_rights_assignment_create_id, request):
-    from coalaip.exceptions import EntityNotYetPersistedError
+def test_right_transferrable(mock_plugin, alice_user, bob_user,
+                             rights_assignment_data, right_entity_name,
+                             mock_create_id_name, data_format,
+                             rights_assignment_data_name,
+                             use_data_format_enum,
+                             mock_rights_assignment_create_id, request):
     right_entity = request.getfixturevalue(right_entity_name)
     mock_create_id = request.getfixturevalue(mock_create_id_name)
-
-    with raises(EntityNotYetPersistedError):
-        right_entity.transfer(rights_assignment_data, from_user=alice_user,
-                              to_user=bob_user)
 
     # Save the Copyright
     mock_plugin.save.return_value = mock_create_id
     right_entity.create(user=alice_user)
 
-    # Test the transfer
+    # Set up the arguments
     mock_plugin.transfer.return_value = mock_rights_assignment_create_id
     transfer_kwargs = {
         'from_user': alice_user,
@@ -509,6 +476,7 @@ def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
             data_format = get_data_format_enum_member(data_format)
         transfer_kwargs['rights_assignment_format'] = data_format
 
+    # Test the transfer
     transfer_tx_id = right_entity.transfer(rights_assignment_data,
                                            **transfer_kwargs)
     assert transfer_tx_id == mock_rights_assignment_create_id
@@ -521,31 +489,16 @@ def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
                                             to_user=bob_user)
 
 
-@mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format,data_name', [
-    (None, 'rights_assignment_data'),
-    ('json', 'rights_assignment_json'),
-    ('jsonld', 'rights_assignment_jsonld'),
-    mark.skip(('jsonld', 'rights_assignment_ipld')),
-])
-def test_rights_assignment_init(mock_plugin, data_format, data_name,
-                                use_data_format_enum, rights_assignment_json,
-                                rights_assignment_jsonld, request):
-    from coalaip.entities import RightsAssignment
-    data = request.getfixturevalue(data_name)
+@mark.parametrize('right_entity_name', ['right_entity', 'copyright_entity'])
+def test_right_transfer_raises_if_not_persisted(alice_user, bob_user,
+                                                rights_assignment_data,
+                                                right_entity_name, request):
+    from coalaip.exceptions import EntityNotYetPersistedError
+    right_entity = request.getfixturevalue(right_entity_name)
 
-    kwargs = {}
-    if data_format:
-        if use_data_format_enum:
-            from tests.utils import get_data_format_enum_member
-            data_format = get_data_format_enum_member(data_format)
-        kwargs['data_format'] = data_format
-
-    rights_assignment = RightsAssignment.from_data(data, plugin=mock_plugin,
-                                                   **kwargs)
-    assert rights_assignment.persist_id is None
-    assert rights_assignment.to_json() == rights_assignment_json
-    assert rights_assignment.to_jsonld() == rights_assignment_jsonld
+    with raises(EntityNotYetPersistedError):
+        right_entity.transfer(rights_assignment_data, from_user=alice_user,
+                              to_user=bob_user)
 
 
 def test_rights_assignment_cannot_create(rights_assignment_entity, alice_user):
@@ -557,8 +510,3 @@ def test_rights_assignment_cannot_create(rights_assignment_entity, alice_user):
 @mark.skip('Rights Assignments require transfer() to be implemented')
 def test_rights_assignment_get_status(rights_assignment_entity):
     pass
-
-
-def test_rights_assignment_non_transferrable(rights_assignment_entity):
-    with raises(AttributeError):
-        rights_assignment_entity.transfer()

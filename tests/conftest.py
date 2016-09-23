@@ -43,6 +43,11 @@ def mock_entity_status():
 
 
 @fixture
+def mock_entity_create_id():
+    return 'mock_entity_create_id'
+
+
+@fixture
 def base_model():
     from coalaip.models import Model
     model = Model(data={}, ld_type='type')
@@ -50,32 +55,8 @@ def base_model():
 
 
 @fixture
-def mock_entity_class():
-    from coalaip.entities import Entity
-    from coalaip.models import _model_factory
-
-    class MockEntity(Entity):
-        @classmethod
-        def generate_model(cls, *args, **kwargs):
-            return _model_factory(ld_type='type', *args, **kwargs)
-
-    return MockEntity
-
-
-@fixture
-def mock_entity(mock_plugin, mock_entity_class):
-    return mock_entity_class.from_data({'name': 'base entity'},
-                                       plugin=mock_plugin)
-
-
-@fixture
-def mock_entity_create_id():
-    return 'mock_entity_create_id'
-
-
-@fixture
-def mock_creation_type():
-    return 'mock_creation_type'
+def mock_entity_type():
+    return 'mock_entity_type'
 
 
 @fixture
@@ -117,7 +98,7 @@ def work_entity(mock_plugin, work_data):
 
 @fixture
 def mock_work_create_id():
-    return 'mock_create_id'
+    return 'mock_work_create_id'
 
 
 @fixture
@@ -131,6 +112,11 @@ def manifestation_data_factory(mock_work_create_id):
         return extend_dict(manifestation_data, data)
 
     return factory
+
+
+@fixture
+def manifestation_data(manifestation_data_factory):
+    return manifestation_data_factory()
 
 
 @fixture
@@ -150,6 +136,11 @@ def manifestation_jsonld_factory(context_urls_all, manifestation_data_factory):
 
 
 @fixture
+def manifestation_jsonld(manifestation_jsonld_factory):
+    return manifestation_jsonld_factory()
+
+
+@fixture
 def manifestation_json_factory(manifestation_data_factory):
     def factory(**kwargs):
         json_data = {
@@ -164,16 +155,19 @@ def manifestation_json_factory(manifestation_data_factory):
 
 
 @fixture
-def manifestation_model(manifestation_data_factory):
+def manifestation_json(manifestation_json_factory):
+    return manifestation_json_factory()
+
+
+@fixture
+def manifestation_model(manifestation_data):
     from coalaip.models import manifestation_model_factory
-    manifestation_data = manifestation_data_factory()
     return manifestation_model_factory(data=manifestation_data)
 
 
 @fixture
-def manifestation_entity(mock_plugin, manifestation_data_factory):
+def manifestation_entity(mock_plugin, manifestation_data):
     from coalaip.entities import Manifestation
-    manifestation_data = manifestation_data_factory()
     return Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
@@ -193,6 +187,11 @@ def copyright_data_factory(mock_manifestation_create_id):
 
 
 @fixture
+def copyright_data(copyright_data_factory):
+    return copyright_data_factory()
+
+
+@fixture
 def copyright_jsonld_factory(context_urls_coalaip, copyright_data_factory):
     def factory(**kwargs):
         ld_data = {
@@ -202,6 +201,11 @@ def copyright_jsonld_factory(context_urls_coalaip, copyright_data_factory):
         }
         return extend_dict(ld_data, copyright_data_factory(**kwargs))
     return factory
+
+
+@fixture
+def copyright_jsonld(copyright_jsonld_factory):
+    return copyright_jsonld_factory()
 
 
 @fixture
@@ -215,16 +219,19 @@ def copyright_json_factory(copyright_data_factory):
 
 
 @fixture
-def copyright_model(copyright_data_factory):
+def copyright_json(copyright_json_factory):
+    return copyright_json_factory()
+
+
+@fixture
+def copyright_model(copyright_data):
     from coalaip.models import copyright_model_factory
-    copyright_data = copyright_data_factory()
     return copyright_model_factory(data=copyright_data)
 
 
 @fixture
-def copyright_entity(mock_plugin, copyright_data_factory):
+def copyright_entity(mock_plugin, copyright_data):
     from coalaip.entities import Copyright
-    copyright_data = copyright_data_factory()
     return Copyright.from_data(copyright_data, plugin=mock_plugin)
 
 
@@ -244,6 +251,11 @@ def right_data_factory(mock_copyright_create_id):
 
 
 @fixture
+def right_data(right_data_factory):
+    return right_data_factory()
+
+
+@fixture
 def right_jsonld_factory(context_urls_coalaip, right_data_factory):
     def factory(**kwargs):
         ld_data = {
@@ -253,6 +265,11 @@ def right_jsonld_factory(context_urls_coalaip, right_data_factory):
         }
         return extend_dict(ld_data, right_data_factory(**kwargs))
     return factory
+
+
+@fixture
+def right_jsonld(right_jsonld_factory):
+    return right_jsonld_factory()
 
 
 @fixture
@@ -266,16 +283,19 @@ def right_json_factory(right_data_factory):
 
 
 @fixture
-def right_model(right_data_factory):
+def right_json(right_json_factory):
+    return right_json_factory()
+
+
+@fixture
+def right_model(right_data):
     from coalaip.models import right_model_factory
-    right_data = right_data_factory()
     return right_model_factory(data=right_data)
 
 
 @fixture
-def right_entity(mock_plugin, right_data_factory):
+def right_entity(mock_plugin, right_data):
     from coalaip.entities import Right
-    right_data = right_data_factory()
     return Right.from_data(right_data, plugin=mock_plugin)
 
 
