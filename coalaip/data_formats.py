@@ -2,6 +2,15 @@
 
 from collections import namedtuple
 from copy import copy
+from enum import Enum, unique
+
+
+@unique
+class DataFormat(Enum):
+    """Supported data formats."""
+    json = 'json'
+    jsonld = 'jsonld'
+    ipld = 'ipld'
 
 
 def _data_format_resolver(data_format, resolver_dict):
@@ -9,10 +18,8 @@ def _data_format_resolver(data_format, resolver_dict):
     :attr:`data_format`.
 
     Args:
-        data_format (str): the data format; must be one of:
-            - 'jsonld' (default)
-            - 'json'
-            - 'ipld'
+        data_format (:class:`~.DataFormat`|str): the data format; must
+            be one of the :class:`~.DataFormat`s or a string equivalent.
         resolver_dict (dict): the resolving dict. Can hold any value
             for any of the valid :attr:`data_format` strings
 
@@ -20,10 +27,16 @@ def _data_format_resolver(data_format, resolver_dict):
         the value of the key in :attr:`resolver_dict` that matches
         :attr:`data_format`
     """
-    if data_format not in ['jsonld', 'json', 'ipld']:
-        raise ValueError(("'data_format' must be one of 'json', 'jsonld', "
-                          "or 'ipld'. Given '{}'.").format(data_format))
-    return resolver_dict[data_format]
+    try:
+        data_format = DataFormat(data_format)
+    except ValueError:
+        supported_formats = ', '.join(
+            ["'{}'".format(f.value) for f in DataFormat])
+        raise ValueError(("'data_format' must be one of {formats}. Given "
+                          "'{value}'.").format(formats=supported_formats,
+                                               value=data_format))
+    return (resolver_dict.get(data_format) or
+            resolver_dict.get(data_format.value))
 
 
 ExtractedLinkedDataResult = namedtuple('ExtractedLinkedDataResult', [
@@ -96,6 +109,6 @@ def _extract_ld_data_from_keys(orig_data, type_key=None, context_key=None,
 def _get_format_from_data(data):
     # TODO: add IPLD
     if bool(data.get('@type') or data.get('@context') or data.get('@id')):
-        return 'jsonld'
+        return DataFormat.jsonld
     else:
-        return 'json'
+        return DataFormat.json

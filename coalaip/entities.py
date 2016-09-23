@@ -15,6 +15,7 @@ import attr
 from abc import ABC, abstractmethod
 from copy import copy
 from coalaip.data_formats import (
+    DataFormat,
     _data_format_resolver,
     _extract_ld_data,
 )
@@ -139,7 +140,7 @@ class Entity(ABC, PostInitImmutable):
 
     # FIXME: support @ids in models
     @classmethod
-    def from_data(cls, data, *, data_format='jsonld', plugin):
+    def from_data(cls, data, *, data_format=DataFormat.jsonld, plugin):
         """Generic factory for instantiating :attr:`cls` entities
         from their model data. Entities instantiated from this factory
         have yet to be created on the backing persistence layer; see
@@ -149,7 +150,7 @@ class Entity(ABC, PostInitImmutable):
         special keys in :attr:`data` and will have different behaviour
         depending on the ``data_type`` requested in later methods (e.g.
         :meth:`create`):
-            - ``data_format == 'jsonld'``:
+            - jsonld:
                 - '@type' denotes the Linked Data type of the entity
                 - '@context' denotes the JSON-LD context of the entity
             - Otherwise:
@@ -157,11 +158,10 @@ class Entity(ABC, PostInitImmutable):
 
         Args:
             data (dict): Model data for the entity
-            data_format (str): Data format of :attr:`data`; must be one
-                of:
-                    - 'jsonld' (default)
-                    - 'json'
-                    - 'ipld'
+            data_format (:class:`~.DataFormat`|str): Data format of
+                :attr:`data`; must be one of the :class:`~.DataFormat`s
+                or a string equivalent.
+                Defaults to jsonld.
             plugin (subclass of :class:`~.AbstractPlugin, keyword):
                 Persistence layer plugin used by generated :attr:`cls`
 
@@ -239,18 +239,17 @@ class Entity(ABC, PostInitImmutable):
             entity.load()
         return entity
 
-    def create(self, user, data_format='jsonld'):
+    def create(self, user, data_format=DataFormat.jsonld):
         """Create (i.e. persist) this entity to the backing persistence
         layer.
 
         Args:
             user (any): A user based on the model specified by the
                 persistence layer
-            data_format (str): Data format used in persisting the
-                entity; must be one of:
-                    - 'jsonld' (default)
-                    - 'json'
-                    - 'ipld'
+            data_format (:class:`~.DataFormat`|str): Data format used in
+                persisting the entity; must be one of the
+                :class:`~.DataFormat`s or a string equivalent.
+                Defaults to jsonld.
 
         Returns:
             str: Id of this entity on the persistence layer
