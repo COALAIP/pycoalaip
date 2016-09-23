@@ -11,7 +11,8 @@ with open('HISTORY.rst') as history_file:
 long_discription = readme + '\n\n' + history
 
 install_requires = [
-    'PyLD>=0.7.1'
+    'attrs>=16.2.0',
+    'PyLD>=0.7.1',
 ]
 
 tests_require = [
