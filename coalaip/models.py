@@ -14,10 +14,9 @@ Instead, use the models that are contained in the entities
 import attr
 import coalaip.model_validators as validators
 
-from copy import copy
 from coalaip import context_urls
 from coalaip.exceptions import ModelDataError, ModelNotYetLoadedError
-from coalaip.utils import extend_dict, PostInitImmutable
+from coalaip.utils import extend_dict, PostInitImmutable, _extract_ld_data
 
 
 def get_default_ld_context():
@@ -145,40 +144,27 @@ class LazyLoadableModel(PostInitImmutable):
             return
 
         persist_data = plugin.load(persist_id)
-        model_data = copy(persist_data)
 
-        # Check the type, context, and id, if available, and remove them from
-        # the data before saving
-        for type_key in ['@type', 'type']:
-            if type_key in persist_data:
-                loaded_type = persist_data[type_key]
+        extracted_ld_result = _extract_ld_data(persist_data)
+        loaded_data = extracted_ld_result.data
+        loaded_type = extracted_ld_result.ld_type
+        loaded_context = extracted_ld_result.ld_context
 
-                if loaded_type and loaded_type != self.ld_type:
-                    raise ModelDataError(
-                        ("Loaded '@type' ('{loaded_type}') differs from "
-                         "entity's '@type' "
-                         "('{self_type})'").format(loaded_type=loaded_type,
+        # Sanity check the loaded type and context
+        if loaded_type and loaded_type != self.ld_type:
+            raise ModelDataError(
+                ("Loaded '@type' ('{loaded_type}') differs from entity's "
+                 "'@type' ('{self_type})'").format(loaded_type=loaded_type,
                                                    self_type=self.ld_type)
-                    )
+            )
+        if loaded_context and loaded_context != self.ld_context:
+            raise ModelDataError(
+                ("Loaded context ('{loaded_ctx}') differs from entity's "
+                 "context ('{self_ctx}')").format(loaded_ctx=loaded_context,
+                                                  self_ctx=self.ld_context)
+            )
 
-                del model_data[type_key]
-
-        if '@context' in persist_data:
-            loaded_ctx = persist_data['@context']
-
-            if loaded_ctx and loaded_ctx != self.ld_context:
-                raise ModelDataError(
-                    ("Loaded context ('{loaded_ctx}') differs from entity's "
-                     "context ('{self_ctx}')").format(loaded_ctx=loaded_ctx,
-                                                      self_ctx=self.ld_context)
-                )
-
-            del model_data['@context']
-
-        if '@id' in persist_data:
-            del model_data['@id']
-
-        self.loaded_model = Model(data=model_data, validator=self.validator,
+        self.loaded_model = Model(data=loaded_data, validator=self.validator,
                                   ld_type=self.ld_type,
                                   ld_context=self.ld_context)
 

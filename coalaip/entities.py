@@ -30,7 +30,11 @@ from coalaip.models import (
     rights_assignment_model_factory,
 )
 from coalaip.plugin import AbstractPlugin
-from coalaip.utils import PostInitImmutable, _data_format_resolver
+from coalaip.utils import (
+    PostInitImmutable,
+    _data_format_resolver,
+    _extract_ld_data,
+)
 
 
 @attr.s(repr=False)
@@ -170,19 +174,13 @@ class Entity(ABC, PostInitImmutable):
                 validation
         """
 
-        def bind_get_model_kwargs_to_keys(type_key=None, context_key=None,
-                                          id_key=None):
+        def bind_get_model_kwargs(data_format):
             def get_model_kwargs(data):
-                model_kwargs = {}
-                if type_key and type_key in data:
-                    model_kwargs['ld_type'] = data[type_key]
-                    del data[type_key]
-                if context_key and context_key in data:
-                    model_kwargs['ld_context'] = data[context_key]
-                    del data[context_key]
-                if id_key and id_key in data:
-                    del data[id_key]
-                model_kwargs['data'] = data
+                result = _extract_ld_data(data, data_format)
+                model_kwargs = {k: v for (k, v) in result._asdict().items()
+                                if v is not None}
+                if 'ld_id' in model_kwargs:
+                    del model_kwargs['ld_id']
                 return model_kwargs
             return get_model_kwargs
 
@@ -191,13 +189,11 @@ class Entity(ABC, PostInitImmutable):
                                        'been implemented yet.'))
 
         get_model_kwargs = _data_format_resolver(data_format, {
-            'jsonld': bind_get_model_kwargs_to_keys(type_key='@type',
-                                                    context_key='@context',
-                                                    id_key='@id'),
-            'json': bind_get_model_kwargs_to_keys(type_key='type'),
+            'jsonld': bind_get_model_kwargs('jsonld'),
+            'json': bind_get_model_kwargs('json'),
             'ipld': get_model_kwargs_from_ipld,
         })
-        model = cls.generate_model(**get_model_kwargs(copy(data)))
+        model = cls.generate_model(**get_model_kwargs(data))
 
         return cls(model, plugin)
 
