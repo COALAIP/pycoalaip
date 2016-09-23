@@ -30,7 +30,7 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
 
 
 @mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format', [None, 'json', 'jsonld'])
+@mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
 def test_register_manifestation(mock_plugin, mock_coalaip,
                                 manifestation_data_factory, alice_user,
                                 data_format, use_data_format_enum,
@@ -263,7 +263,7 @@ def test_register_manifestation_raises_on_creation_error(
 
 
 @mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format', [None, 'json', 'jsonld'])
+@mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
 def test_derive_right(mock_plugin, mock_coalaip, right_data_factory,
                       alice_user, data_format, use_data_format_enum,
                       mock_copyright_create_id, mock_right_create_id):
