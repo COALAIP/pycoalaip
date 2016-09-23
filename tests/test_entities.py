@@ -107,6 +107,7 @@ def test_entity_raises_on_status_if_not_found(mock_plugin, mock_entity,
     (None, 'work_data'),
     ('json', 'work_json'),
     ('jsonld', 'work_jsonld'),
+    mark.skip(('ipld', 'work_ipld')),
 ])
 def test_work_init_from_data(mock_plugin, data_format, data_name,
                              use_data_format_enum, work_json, work_jsonld,
@@ -180,6 +181,7 @@ def test_work_init_from_data_raises_if_manifestation(mock_plugin, work_data):
     (None, 'work_jsonld'),
     ('json', 'work_json'),
     ('jsonld', 'work_jsonld'),
+    mark.skip(('ipld', 'work_ipld')),
 ])
 def test_work_create(mock_plugin, work_entity, alice_user, data_format,
                      use_data_format_enum, model_data_name,
@@ -211,6 +213,7 @@ def test_work_non_transferrable(work_entity):
     (None, 'manifestation_data_factory'),
     ('json', 'manifestation_json_factory'),
     ('jsonld', 'manifestation_jsonld_factory'),
+    mark.skip(('ipld', 'manifestation_ipld_factory')),
 ])
 def test_manifestation_init(mock_plugin, data_format, data_factory_name,
                             use_data_format_enum, manifestation_json_factory,
@@ -239,6 +242,7 @@ def test_manifestation_init(mock_plugin, data_format, data_factory_name,
 @mark.parametrize('data_format,type_key', [
     ('json', 'type'),
     ('jsonld', '@type'),
+    mark.skip(('ipld', 'type')),
 ])
 def test_manifestation_init_other_type(mock_plugin, manifestation_data_factory,
                                        data_format, type_key,
@@ -302,6 +306,7 @@ def test_manifestation_init_raises_without_str_manifestation_of(
     (None, 'manifestation_jsonld_factory'),
     ('json', 'manifestation_json_factory'),
     ('jsonld', 'manifestation_jsonld_factory'),
+    mark.skip(('ipld', 'manifestation_ipld_factory')),
 ])
 def test_manifestation_create(mock_plugin, manifestation_entity, alice_user,
                               data_format, model_data_factory_name,
@@ -332,7 +337,7 @@ def test_manifestation_non_transferrable(manifestation_entity):
 
 
 @mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format', [None, 'json', 'jsonld'])
+@mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
 @mark.parametrize('right_cls,data_factory_name,json_factory_name, jsonld_factory_name', [
     ('Right', 'right_data_factory', 'right_json_factory', 'right_jsonld_factory'),
     ('Copyright', 'copyright_data_factory', 'copyright_json_factory', 'copyright_jsonld_factory'),
@@ -434,6 +439,7 @@ def test_right_init_raises_with_both_rights_of_allowed_by(
     ('', '{right_type}_jsonld_factory'),
     ('json', '{right_type}_json_factory'),
     ('jsonld', '{right_type}_jsonld_factory'),
+    mark.skip(('ipld', '{right_type}_ipld_factory')),
 ])
 def test_copyright_create(mock_plugin, alice_user, right_type,
                           right_entity_name, mock_create_id_name,
@@ -471,6 +477,7 @@ def test_copyright_create(mock_plugin, alice_user, right_type,
     ('', 'rights_assignment_jsonld'),
     ('json', 'rights_assignment_json'),
     ('jsonld', 'rights_assignment_jsonld'),
+    mark.skip(('ipld', 'rights_assignment_ipld')),
 ])
 def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
                                  rights_assignment_data, right_entity_name,
@@ -519,6 +526,7 @@ def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
     (None, 'rights_assignment_data'),
     ('json', 'rights_assignment_json'),
     ('jsonld', 'rights_assignment_jsonld'),
+    mark.skip(('jsonld', 'rights_assignment_ipld')),
 ])
 def test_rights_assignment_init(mock_plugin, data_format, data_name,
                                 use_data_format_enum, rights_assignment_json,
