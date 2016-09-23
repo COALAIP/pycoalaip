@@ -15,8 +15,8 @@ class PostInitImmutable:
         attributes with initial values set are immediately frozen upon
         initialization.
 
-        \*\*Note\*\*: Obviously, this doesn't stop anyone from setting
-        the uninitialized attributes before you've set it yourself.
+        **Note**: Obviously, this doesn't stop anyone from setting the
+        uninitialized attributes before you've set it yourself.
         Hopefully, you've got responsibile users.
 
         Raises:

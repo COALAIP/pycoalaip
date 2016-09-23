@@ -1,4 +1,4 @@
-"""Utilities for data formats supported by pycoalaip"""
+"""Utilities for data formats supported by pycoalaip."""
 
 from collections import namedtuple
 from copy import copy
@@ -7,7 +7,7 @@ from enum import Enum, unique
 
 @unique
 class DataFormat(Enum):
-    """Supported data formats."""
+    """Enum of supported data formats."""
     json = 'json'
     jsonld = 'jsonld'
     ipld = 'ipld'
@@ -18,8 +18,9 @@ def _data_format_resolver(data_format, resolver_dict):
     :attr:`data_format`.
 
     Args:
-        data_format (:class:`~.DataFormat`|str): the data format; must
-            be one of the :class:`~.DataFormat`s or a string equivalent.
+        data_format (:class:`~.DataFormat` or str): the data format;
+            must be a member of :class:`~.DataFormat` or a string
+            equivalent.
         resolver_dict (dict): the resolving dict. Can hold any value
             for any of the valid :attr:`data_format` strings
 

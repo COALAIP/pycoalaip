@@ -110,5 +110,5 @@ def test_extend_dict_skips_none(base_dict, override_foo_dict,
     overriden_with_none_dict = extend_dict(base_dict, None, override_foo_dict,
                                            None)
 
-    # Results in the same dict as if the `None`s weren't given
+    # Results in the same dict as if the Nones weren't given
     assert overriden_dict == overriden_with_none_dict

@@ -20,6 +20,22 @@ coalaip.context_urls module
     :undoc-members:
     :show-inheritance:
 
+coalaip.data_formats module
+---------------------------
+
+.. automodule:: coalaip.data_formats
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+coalaip.entities module
+-----------------------
+
+.. automodule:: coalaip.entities
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 coalaip.exceptions module
 -------------------------
 
@@ -32,6 +48,14 @@ coalaip.jsonld module
 ---------------------
 
 .. automodule:: coalaip.jsonld
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+coalaip.model_validators module
+-------------------------------
+
+.. automodule:: coalaip.model_validators
     :members:
     :undoc-members:
     :show-inheritance:

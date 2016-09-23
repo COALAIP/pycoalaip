@@ -4,11 +4,10 @@ Encapsulates the data modelling of COALA IP entities. Supports
 model validation and the loading of data from a backing persistence
 layer.
 
-\*\*Note:\*\* this module should not be used directly to generate
-models, unless you are extending the built-ins for your own extensions.
-Instead, use the models that are contained in the entities
-(:mod:`.entities`) returned from the high-level functions
-(:mod:`.coalaip`).
+**Note:** this module should not be used directly to generate models,
+unless you are extending the built-ins for your own extensions. Instead,
+use the models that are contained in the entities (:mod:`.entities`)
+returned from the high-level functions (:mod:`.coalaip`).
 """
 
 import attr
@@ -29,14 +28,14 @@ class Model:
     """Basic data model class for COALA IP entities. Includes Linked
     Data (JSON-LD) specifics.
 
-    \*\*Immutable (see :class:`.PostInitImmutable`)\*\*.
+    **Immutable (see :class:`.PostInitImmutable`)**.
 
     Initialization may throw if attribute validation fails.
 
     Attributes:
         data (dict): Model data. Uses :attr:`validator` for validation.
-        ld_type (str): "@type" of the entity
-        ld_context (str|[str|dict], keyword): "@context" for the entity
+        ld_type (str): @type of the entity
+        ld_context (str or [str|dict], keyword): "@context" for the entity
             as either a string URL or array of string URLs or
             dictionaries. See the `JSON-LD spec on contexts
             <https://www.w3.org/TR/json-ld/#the-context>`_ for more
@@ -64,7 +63,7 @@ class Model:
 class LazyLoadableModel(PostInitImmutable):
     """Lazy loadable data model class for COALA IP entities.
 
-    \*\*Immutable (see :class:`.PostInitImmutable`)\*\*.
+    **Immutable (see :class:`.PostInitImmutable`)**.
 
     Similar to :class:`~.Model`, except it allows the model data to be
     lazily loaded afterwards from a backing persistence layer through a
@@ -132,7 +131,7 @@ class LazyLoadableModel(PostInitImmutable):
 
         Args:
             persist_id (str): Id of this model on the persistence layer
-            plugin (subclass of :class:`~.AbstractPlugin): Persistence
+            plugin (subclass of :class:`~.AbstractPlugin`): Persistence
                 layer plugin to load from
 
         Raises:
@@ -154,9 +153,9 @@ class LazyLoadableModel(PostInitImmutable):
         # Sanity check the loaded type and context
         if loaded_type and loaded_type != self.ld_type:
             raise ModelDataError(
-                ("Loaded '@type' ('{loaded_type}') differs from entity's "
-                 "'@type' ('{self_type})'").format(loaded_type=loaded_type,
-                                                   self_type=self.ld_type)
+                ("Loaded @type ('{loaded_type}') differs from entity's "
+                 "@type ('{self_type})'").format(loaded_type=loaded_type,
+                                                 self_type=self.ld_type)
             )
         if loaded_context and loaded_context != self.ld_context:
             raise ModelDataError(
