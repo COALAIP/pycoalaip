@@ -29,7 +29,7 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
                                                  **generate_user_kwargs)
 
 
-@mark.parametrize('data_format', [(''), ('json'), ('jsonld')])
+@mark.parametrize('data_format', [None, 'json', 'jsonld'])
 def test_register_manifestation(mock_plugin, mock_coalaip,
                                 manifestation_data_factory, alice_user,
                                 data_format, mock_work_create_id,
@@ -255,9 +255,9 @@ def test_register_manifestation_raises_on_creation_error(
                                             user=alice_user)
 
 
-@mark.parametrize('data_format', [(''), ('json'), ('jsonld')])
-def test_derive_right(mock_plugin, mock_coalaip, right_data_factory, alice_user,
-                      data_format, mock_copyright_create_id,
+@mark.parametrize('data_format', [None, 'json', 'jsonld'])
+def test_derive_right(mock_plugin, mock_coalaip, right_data_factory,
+                      alice_user, data_format, mock_copyright_create_id,
                       mock_right_create_id):
     mock_plugin.save.return_value = mock_right_create_id
 
