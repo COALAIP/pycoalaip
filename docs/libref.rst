@@ -80,13 +80,17 @@ prefer one of the :ref:`core-models` instead.
 
 .. autoclass:: EntityCreationError
 
-.. autoclass:: EntityDataError
-
 .. autoclass:: EntityNotFoundError
 
 .. autoclass:: EntityNotYetPersistedError
 
 .. autoclass:: EntityPreviouslyCreatedError
+
+.. autoclass:: ModelError
+
+.. autoclass:: ModelDataError
+
+.. autoclass:: ModelNotYetLoadedError
 
 
 ``plugin``
