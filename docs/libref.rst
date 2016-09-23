@@ -15,60 +15,66 @@ Library Reference
     .. automethod:: __init__
 
 
+``entities``
+------------
+
+.. automodule:: coalaip.entities
+
+.. _core-entities:
+
+``Core Entities``
+^^^^^^^^^^^^^^^^^
+
+.. note:: Most of these core entity classes have their functionality
+          implemented through :class:`~.Entity`.
+
+.. autoclass:: Work
+    :members:
+
+.. autoclass:: Manifestation
+    :members:
+
+.. autoclass:: Right
+    :members:
+
+.. autoclass:: Copyright
+    :members:
+
+``Base Entities``
+^^^^^^^^^^^^^^^^^
+
+Base functionality for the models above. These should never be instantiated;
+prefer one of the :ref:`core-entities` instead.
+
+.. autoclass:: Entity
+    :members:
+
+.. autoclass:: TransferrableEntity
+    :members:
+
+
 ``models``
 ----------
 
 .. automodule:: coalaip.models
 
-.. _core-models:
-
-``Core Models``
-^^^^^^^^^^^^^^^
-
-Usually, these classes shouldn't be directly instantiated; instead, you should
-rely on the high-level functions available in :class:`~coalaip.coalaip.CoalaIp`
-that produce instances of these models as part of their output.
-
-.. autoclass:: Work
+.. autoclass:: Model
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: Manifestation
+.. autoclass:: LazyLoadableModel
     :members:
 
     .. automethod:: __init__
 
-.. autoclass:: Copyright
-    :members:
 
-    .. automethod:: __init__
+``data formats``
+----------------
 
-``Base Models``
-^^^^^^^^^^^^^^^
+.. automodule:: coalaip.data_formats
 
-Base functionality for the models above. These should never be instantiated;
-prefer one of the :ref:`core-models` instead.
-
-.. autoclass:: CoalaIpEntity
-    :members:
-
-    .. automethod:: __init__
-
-.. autoclass:: CoalaIpTransferrableEntity
-    :members:
-
-    .. automethod:: __init__
-
-.. autoclass:: Creation
-    :members:
-
-    .. automethod:: __init__
-
-.. autoclass:: Right
-    :members:
-
-    .. automethod:: __init__
+.. autoclass:: DataFormat
 
 
 ``exceptions``
