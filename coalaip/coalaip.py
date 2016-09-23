@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 from coalaip.exceptions import EntityNotYetPersistedError
-from coalaip.models import Copyright, Right, Manifestation, Work
+from coalaip.entities import Copyright, Right, Manifestation, Work
 from coalaip.plugin import AbstractPlugin
 
 
@@ -127,7 +127,7 @@ class CoalaIp:
             if existing_work is None:
                 if work_data is None:
                     work_data = {'name': manifestation_data.get('name')}
-                work = Work(work_data, plugin=self._plugin)
+                work = Work.from_data(work_data, plugin=self._plugin)
                 work.create(user, **kwargs)
             elif not isinstance(existing_work, Work):
                 raise TypeError(("'existing_work' argument to "
@@ -143,17 +143,19 @@ class CoalaIp:
 
             manifestation_data['manifestationOfWork'] = work.persist_id
 
-        manifestation = Manifestation(manifestation_data, plugin=self._plugin)
+        manifestation = Manifestation.from_data(manifestation_data,
+                                                plugin=self._plugin)
         manifestation.create(user, **kwargs)
 
         copyright_data = {'rightsOf': manifestation.persist_id}
-        manifestation_copyright = Copyright(copyright_data, plugin=self._plugin)
+        manifestation_copyright = Copyright.from_data(copyright_data,
+                                                      plugin=self._plugin)
         manifestation_copyright.create(user, **kwargs)
 
         return RegistrationResult(manifestation_copyright, manifestation, work)
 
     def derive_right(self, right_data, *, current_holder, source_right=None,
-                     right_model_cls=Right, **kwargs):
+                     right_entity_cls=Right, **kwargs):
         """Derive a new Right from an existing :attr:`source_right` (a
         :class:`~coalaip.models.Right` or subclass) for the
         :attr:`current_holder` of the :attr:`source_right`. The newly
@@ -212,7 +214,7 @@ class CoalaIp:
 
             right_data['allowedBy'] = source_right.persist_id
 
-        right = right_model_cls(right_data, plugin=self._plugin)
+        right = right_entity_cls.from_data(right_data, plugin=self._plugin)
         right.create(current_holder, **kwargs)
         return right
 

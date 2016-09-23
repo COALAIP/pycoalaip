@@ -38,25 +38,44 @@ def mock_coalaip(mock_plugin):
 
 
 @fixture
-def mock_model_status():
+def mock_entity_status():
     return 'valid'
 
 
 @fixture
-def base_entity_model(mock_plugin):
-    from coalaip.models import CoalaIpEntity
-
-    class BaseEntityModel(CoalaIpEntity):
-        @classmethod
-        def from_dict(*args, **kwargs):
-            return super().from_dict(*args, **kwargs)
-
-    return BaseEntityModel(data={}, ld_type='type', plugin=mock_plugin)
+def base_model():
+    from coalaip.models import Model
+    model = Model(data={}, ld_type='type')
+    return model
 
 
 @fixture
-def mock_base_entity_create_id():
+def mock_entity_class():
+    from coalaip.entities import Entity
+    from coalaip.models import _model_factory
+
+    class MockEntity(Entity):
+        @classmethod
+        def generate_model(cls, *args, **kwargs):
+            return _model_factory(ld_type='type', *args, **kwargs)
+
+    return MockEntity
+
+
+@fixture
+def mock_entity(mock_plugin, mock_entity_class):
+    return mock_entity_class.from_data({'name': 'base entity'},
+                                       plugin=mock_plugin)
+
+
+@fixture
+def mock_entity_create_id():
     return 'mock_entity_create_id'
+
+
+@fixture
+def mock_creation_type():
+    return 'mock_creation_type'
 
 
 @fixture
@@ -85,9 +104,15 @@ def work_json(work_data):
 
 
 @fixture
-def work_model(mock_plugin, work_data):
-    from coalaip.models import Work
-    return Work(work_data, plugin=mock_plugin)
+def work_model(work_data):
+    from coalaip.models import work_model_factory
+    return work_model_factory(data=work_data)
+
+
+@fixture
+def work_entity(mock_plugin, work_data):
+    from coalaip.entities import Work
+    return Work.from_data(work_data, plugin=mock_plugin)
 
 
 @fixture
@@ -139,20 +164,22 @@ def manifestation_json_factory(manifestation_data_factory):
 
 
 @fixture
-def manifestation_model(mock_plugin, manifestation_data_factory):
-    from coalaip.models import Manifestation
+def manifestation_model(manifestation_data_factory):
+    from coalaip.models import manifestation_model_factory
     manifestation_data = manifestation_data_factory()
-    return Manifestation(manifestation_data, plugin=mock_plugin)
+    return manifestation_model_factory(data=manifestation_data)
+
+
+@fixture
+def manifestation_entity(mock_plugin, manifestation_data_factory):
+    from coalaip.entities import Manifestation
+    manifestation_data = manifestation_data_factory()
+    return Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
 @fixture
 def mock_manifestation_create_id():
     return 'mock_manifestation_create_id'
-
-
-@fixture
-def mock_manifestation_type():
-    return 'mock_manifestation_type'
 
 
 @fixture
@@ -188,10 +215,17 @@ def copyright_json_factory(copyright_data_factory):
 
 
 @fixture
-def copyright_model(mock_plugin, copyright_data_factory):
-    from coalaip.models import Copyright
+def copyright_model(copyright_data_factory):
+    from coalaip.models import copyright_model_factory
     copyright_data = copyright_data_factory()
-    return Copyright(copyright_data, plugin=mock_plugin)
+    return copyright_model_factory(data=copyright_data)
+
+
+@fixture
+def copyright_entity(mock_plugin, copyright_data_factory):
+    from coalaip.entities import Copyright
+    copyright_data = copyright_data_factory()
+    return Copyright.from_data(copyright_data, plugin=mock_plugin)
 
 
 @fixture
@@ -232,10 +266,17 @@ def right_json_factory(right_data_factory):
 
 
 @fixture
-def right_model(mock_plugin, right_data_factory):
-    from coalaip.models import Right
+def right_model(right_data_factory):
+    from coalaip.models import right_model_factory
     right_data = right_data_factory()
-    return Right(right_data, plugin=mock_plugin)
+    return right_model_factory(data=right_data)
+
+
+@fixture
+def right_entity(mock_plugin, right_data_factory):
+    from coalaip.entities import Right
+    right_data = right_data_factory()
+    return Right.from_data(right_data, plugin=mock_plugin)
 
 
 @fixture
@@ -274,9 +315,16 @@ def rights_assignment_json(rights_assignment_data):
 
 
 @fixture
-def rights_assignment_model(mock_plugin, rights_assignment_json):
-    from coalaip.models import RightsAssignment
-    return RightsAssignment(rights_assignment_json, plugin=mock_plugin)
+def rights_assignment_model(rights_assignment_data):
+    from coalaip.models import rights_assignment_model_factory
+    return rights_assignment_model_factory(data=rights_assignment_data)
+
+
+@fixture
+def rights_assignment_entity(mock_plugin, rights_assignment_data):
+    from coalaip.entities import RightsAssignment
+    return RightsAssignment.from_data(rights_assignment_data,
+                                      plugin=mock_plugin)
 
 
 @fixture
@@ -294,8 +342,8 @@ def persisted_jsonld_registration(mock_plugin, mock_coalaip,
 
     # Create the default manifestation model, but remove the
     # 'manifestationOfWork' key since it'll be created through registration
-    manifestation_model = manifestation_data_factory()
-    del manifestation_model['manifestationOfWork']
+    manifestation_data = manifestation_data_factory()
+    del manifestation_data['manifestationOfWork']
 
     # Set the persisted ids of the entities
     mock_plugin.save.side_effect = create_entity_id_setter(
@@ -304,6 +352,6 @@ def persisted_jsonld_registration(mock_plugin, mock_coalaip,
         mock_copyright_create_id)
 
     return mock_coalaip.register_manifestation(
-        manifestation_model,
+        manifestation_data,
         user=alice_user,
     )
