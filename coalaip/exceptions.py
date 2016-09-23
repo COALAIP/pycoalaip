@@ -2,9 +2,7 @@
 
 
 class EntityError(Exception):
-    """Base class for all entity errors. Raised when there is an error
-    with an entity
-    """
+    """Base class for all entity errors."""
 
 
 class EntityCreationError(EntityError):
@@ -19,10 +17,6 @@ class EntityCreationError(EntityError):
         persistence layer to fail
         """
         return self.args[0]
-
-
-class EntityDataError(EntityError, ValueError):
-    """Raised if there is an error with the entity model's data"""
 
 
 class EntityNotFoundError(EntityError):
@@ -49,3 +43,16 @@ class EntityPreviouslyCreatedError(EntityError):
         layer.
         """
         return self.args[0]
+
+
+class ModelError(Exception):
+    """Base class for all model errors."""
+
+
+class ModelDataError(EntityError, ValueError):
+    """Raised if there is an error with the model's data"""
+
+
+class ModelNotYetLoadedError(EntityError):
+    """Raised if the lazily loaded model has not been loaded from the
+    backing persistence layer yet."""
