@@ -30,7 +30,7 @@ from coalaip.models import (
     rights_assignment_model_factory,
 )
 from coalaip.plugin import AbstractPlugin
-from coalaip.utils import data_format_resolver, PostInitImmutable
+from coalaip.utils import PostInitImmutable, _data_format_resolver
 
 
 @attr.s(repr=False)
@@ -190,7 +190,7 @@ class Entity(ABC, PostInitImmutable):
             raise NotImplementedError(('Creating entities from IPLD has not '
                                        'been implemented yet.'))
 
-        get_model_kwargs = data_format_resolver(data_format, {
+        get_model_kwargs = _data_format_resolver(data_format, {
             'jsonld': bind_get_model_kwargs_to_keys(type_key='@type',
                                                     context_key='@context',
                                                     id_key='@id'),
@@ -339,7 +339,7 @@ class Entity(ABC, PostInitImmutable):
         raise NotImplementedError('to_ipld() has not been implemented yet')
 
     def _to_format(self, data_format):
-        to_format = data_format_resolver(data_format, {
+        to_format = _data_format_resolver(data_format, {
             'jsonld': self.to_jsonld,
             'json': self.to_json,
             'ipld': self.to_ipld,
