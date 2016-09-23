@@ -45,26 +45,6 @@ def test_post_init_immutable():
         immutable.attr2 = 'other_attr'
 
 
-@mark.parametrize('data_format,format_resolved', [
-    ('json', 'json_resolved'),
-    ('jsonld', 'jsonld_resolved'),
-    ('ipld', 'ipld_resolved')
-])
-def test_data_format_resolver(data_format, format_resolved):
-    from coalaip.utils import data_format_resolver
-    resolver = {}
-    resolver[data_format] = format_resolved
-
-    resolved = data_format_resolver(data_format, resolver)
-    assert resolved == format_resolved
-
-
-def test_data_format_resolver_raises_on_bad_format():
-    from coalaip.utils import data_format_resolver
-    with raises(ValueError):
-        data_format_resolver('bad_format', {})
-
-
 def test_extend_dict_single_arg(base_dict):
     from coalaip.utils import extend_dict
     copy = extend_dict(base_dict)
@@ -132,3 +112,23 @@ def test_extend_dict_skips_none(base_dict, override_foo_dict,
 
     # Results in the same dict as if the `None`s weren't given
     assert overriden_dict == overriden_with_none_dict
+
+
+@mark.parametrize('data_format,format_resolved', [
+    ('json', 'json_resolved'),
+    ('jsonld', 'jsonld_resolved'),
+    ('ipld', 'ipld_resolved')
+])
+def test_data_format_resolver(data_format, format_resolved):
+    from coalaip.utils import _data_format_resolver
+    resolver = {}
+    resolver[data_format] = format_resolved
+
+    resolved = _data_format_resolver(data_format, resolver)
+    assert resolved == format_resolved
+
+
+def test_data_format_resolver_raises_on_bad_format():
+    from coalaip.utils import _data_format_resolver
+    with raises(ValueError):
+        _data_format_resolver('bad_format', {})
