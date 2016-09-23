@@ -7,8 +7,12 @@ from pytest import mark, raises
     ('jsonld', 'jsonld_resolved'),
     ('ipld', 'ipld_resolved')
 ])
-def test_data_format_resolver(data_format, format_resolved):
-    from coalaip.data_formats import _data_format_resolver
+def test_data_format_resolver(data_format, format_resolved,
+                              use_data_format_enum):
+    from coalaip.data_formats import DataFormat, _data_format_resolver
+    if use_data_format_enum:
+        data_format = DataFormat(data_format)
+
     resolver = {}
     resolver[data_format] = format_resolved
 
@@ -111,7 +115,8 @@ def test_extract_ld_data_from_keys_ignores_missing_keys(work_data):
     ({'data': 'data'}, 'json'),
 ])
 def test_get_format_from_data(data, expected_format):
-    from coalaip.data_formats import _get_format_from_data
+    from coalaip.data_formats import DataFormat, _get_format_from_data
 
     result_format = _get_format_from_data(data)
+    assert result_format is DataFormat(expected_format)
     assert result_format.value == expected_format

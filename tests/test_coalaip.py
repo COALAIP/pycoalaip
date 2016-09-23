@@ -29,10 +29,12 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
                                                  **generate_user_kwargs)
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld'])
 def test_register_manifestation(mock_plugin, mock_coalaip,
                                 manifestation_data_factory, alice_user,
-                                data_format, mock_work_create_id,
+                                data_format, use_data_format_enum,
+                                mock_work_create_id,
                                 mock_manifestation_create_id,
                                 mock_copyright_create_id):
     from tests.utils import create_entity_id_setter
@@ -52,7 +54,12 @@ def test_register_manifestation(mock_plugin, mock_coalaip,
 
     register_manifestation_kwargs = {}
     if data_format:
-        register_manifestation_kwargs['data_format'] = data_format
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format_arg = get_data_format_enum_member(data_format)
+        else:
+            data_format_arg = data_format
+        register_manifestation_kwargs['data_format'] = data_format_arg
 
     # Create the entities and test they contain the right links
     manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
@@ -255,10 +262,11 @@ def test_register_manifestation_raises_on_creation_error(
                                             user=alice_user)
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld'])
 def test_derive_right(mock_plugin, mock_coalaip, right_data_factory,
-                      alice_user, data_format, mock_copyright_create_id,
-                      mock_right_create_id):
+                      alice_user, data_format, use_data_format_enum,
+                      mock_copyright_create_id, mock_right_create_id):
     mock_plugin.save.return_value = mock_right_create_id
 
     # Create the default right model with 'allowedBy' already set
@@ -266,7 +274,12 @@ def test_derive_right(mock_plugin, mock_coalaip, right_data_factory,
 
     derive_right_kwargs = {}
     if data_format:
-        derive_right_kwargs['data_format'] = data_format
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format_arg = get_data_format_enum_member(data_format)
+        else:
+            data_format_arg = data_format
+        derive_right_kwargs['data_format'] = data_format_arg
 
     # Create the Right and test it was persisted
     right = mock_coalaip.derive_right(right_data, current_holder=alice_user,

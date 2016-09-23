@@ -102,18 +102,23 @@ def test_entity_raises_on_status_if_not_found(mock_plugin, mock_entity,
         mock_entity.status
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format,data_name', [
     (None, 'work_data'),
     ('json', 'work_json'),
     ('jsonld', 'work_jsonld'),
 ])
-def test_work_init_from_data(mock_plugin, data_format, data_name, work_json,
-                             work_jsonld, request):
+def test_work_init_from_data(mock_plugin, data_format, data_name,
+                             use_data_format_enum, work_json, work_jsonld,
+                             request):
     from coalaip.entities import Work
     data = request.getfixturevalue(data_name)
 
     kwargs = {}
     if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
         kwargs['data_format'] = data_format
 
     work = Work.from_data(data, plugin=mock_plugin, **kwargs)
@@ -170,16 +175,21 @@ def test_work_init_from_data_raises_if_manifestation(mock_plugin, work_data):
         Work.from_data(manifestation_of_data, plugin=mock_plugin)
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format,model_data_name', [
     (None, 'work_jsonld'),
     ('json', 'work_json'),
     ('jsonld', 'work_jsonld'),
 ])
 def test_work_create(mock_plugin, work_entity, alice_user, data_format,
-                     model_data_name, mock_work_create_id, request):
+                     use_data_format_enum, model_data_name,
+                     mock_work_create_id, request):
     mock_plugin.save.return_value = mock_work_create_id
 
     if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
         persist_id = work_entity.create(alice_user, data_format)
     else:
         persist_id = work_entity.create(alice_user)
@@ -196,19 +206,23 @@ def test_work_non_transferrable(work_entity):
         work_entity.transfer()
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format,data_factory_name', [
     (None, 'manifestation_data_factory'),
     ('json', 'manifestation_json_factory'),
     ('jsonld', 'manifestation_jsonld_factory'),
 ])
 def test_manifestation_init(mock_plugin, data_format, data_factory_name,
-                            manifestation_json_factory,
+                            use_data_format_enum, manifestation_json_factory,
                             manifestation_jsonld_factory, request):
     from coalaip.entities import Manifestation
     data_factory = request.getfixturevalue(data_factory_name)
 
     kwargs = {}
     if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
         kwargs['data_format'] = data_format
 
     data = data_factory()
@@ -221,16 +235,22 @@ def test_manifestation_init(mock_plugin, data_format, data_factory_name,
     assert manifestation.to_jsonld() == manifestation_jsonld
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format,type_key', [
     ('json', 'type'),
     ('jsonld', '@type'),
 ])
 def test_manifestation_init_other_type(mock_plugin, manifestation_data_factory,
                                        data_format, type_key,
+                                       use_data_format_enum,
                                        manifestation_json_factory,
                                        manifestation_jsonld_factory,
                                        mock_creation_type):
     from coalaip.entities import Manifestation
+
+    if use_data_format_enum:
+        from tests.utils import get_data_format_enum_member
+        data_format = get_data_format_enum_member(data_format)
 
     manifestation_data = manifestation_data_factory(data={
         type_key: mock_creation_type
@@ -277,6 +297,7 @@ def test_manifestation_init_raises_without_str_manifestation_of(
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format,model_data_factory_name', [
     (None, 'manifestation_jsonld_factory'),
     ('json', 'manifestation_json_factory'),
@@ -284,10 +305,14 @@ def test_manifestation_init_raises_without_str_manifestation_of(
 ])
 def test_manifestation_create(mock_plugin, manifestation_entity, alice_user,
                               data_format, model_data_factory_name,
+                              use_data_format_enum,
                               mock_manifestation_create_id, request):
     mock_plugin.save.return_value = mock_manifestation_create_id
 
     if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
         persist_id = manifestation_entity.create(alice_user, data_format)
     else:
         persist_id = manifestation_entity.create(alice_user)
@@ -306,13 +331,15 @@ def test_manifestation_non_transferrable(manifestation_entity):
         manifestation_entity.transfer()
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld'])
 @mark.parametrize('right_cls,data_factory_name,json_factory_name, jsonld_factory_name', [
     ('Right', 'right_data_factory', 'right_json_factory', 'right_jsonld_factory'),
     ('Copyright', 'copyright_data_factory', 'copyright_json_factory', 'copyright_jsonld_factory'),
 ])
 def test_right_init(mock_plugin, data_format, right_cls, data_factory_name,
-                    json_factory_name, jsonld_factory_name, request):
+                    json_factory_name, jsonld_factory_name,
+                    use_data_format_enum, request):
     import importlib
     entities = importlib.import_module('coalaip.entities')
     right_cls = getattr(entities, right_cls)
@@ -328,11 +355,15 @@ def test_right_init(mock_plugin, data_format, right_cls, data_factory_name,
     if data_format is None:
         kwargs['data'] = right_data
     else:
-        kwargs['data_format'] = data_format
         if data_format == 'json':
             kwargs['data'] = right_json
         elif data_format == 'jsonld':
             kwargs['data'] = right_jsonld
+
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
+        kwargs['data_format'] = data_format
 
     right = right_cls.from_data(plugin=mock_plugin, **kwargs)
     assert right.persist_id is None
@@ -394,6 +425,7 @@ def test_right_init_raises_with_both_rights_of_allowed_by(
         Right.from_data(right_data, plugin=mock_plugin)
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('right_type,right_entity_name,mock_create_id_name', [
     ('right', 'right_entity', 'mock_right_create_id'),
     ('copyright', 'copyright_entity', 'mock_copyright_create_id'),
@@ -406,7 +438,7 @@ def test_right_init_raises_with_both_rights_of_allowed_by(
 def test_copyright_create(mock_plugin, alice_user, right_type,
                           right_entity_name, mock_create_id_name,
                           data_format, model_data_factory_name_template,
-                          request):
+                          use_data_format_enum, request):
     model_data_factory_name = model_data_factory_name_template.format(right_type=right_type)
 
     model_data_factory = request.getfixturevalue(model_data_factory_name)
@@ -416,6 +448,9 @@ def test_copyright_create(mock_plugin, alice_user, right_type,
     mock_plugin.save.return_value = mock_create_id
 
     if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
         persist_id = right_entity.create(alice_user, data_format)
     else:
         persist_id = right_entity.create(alice_user)
@@ -431,6 +466,7 @@ def test_copyright_create(mock_plugin, alice_user, right_type,
     ('right_entity', 'mock_right_create_id'),
     ('copyright_entity', 'mock_copyright_create_id'),
 ])
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format,rights_assignment_data_name', [
     ('', 'rights_assignment_jsonld'),
     ('json', 'rights_assignment_json'),
@@ -440,6 +476,7 @@ def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
                                  rights_assignment_data, right_entity_name,
                                  mock_create_id_name, data_format,
                                  rights_assignment_data_name,
+                                 use_data_format_enum,
                                  mock_rights_assignment_create_id, request):
     from coalaip.exceptions import EntityNotYetPersistedError
     right_entity = request.getfixturevalue(right_entity_name)
@@ -460,6 +497,9 @@ def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
         'to_user': bob_user
     }
     if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
         transfer_kwargs['rights_assignment_format'] = data_format
 
     transfer_tx_id = right_entity.transfer(rights_assignment_data,
@@ -474,19 +514,23 @@ def test_copyright_transferrable(mock_plugin, alice_user, bob_user,
                                             to_user=bob_user)
 
 
+@mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format,data_name', [
     (None, 'rights_assignment_data'),
     ('json', 'rights_assignment_json'),
     ('jsonld', 'rights_assignment_jsonld'),
 ])
 def test_rights_assignment_init(mock_plugin, data_format, data_name,
-                                rights_assignment_json,
+                                use_data_format_enum, rights_assignment_json,
                                 rights_assignment_jsonld, request):
     from coalaip.entities import RightsAssignment
     data = request.getfixturevalue(data_name)
 
     kwargs = {}
     if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
         kwargs['data_format'] = data_format
 
     rights_assignment = RightsAssignment.from_data(data, plugin=mock_plugin,
