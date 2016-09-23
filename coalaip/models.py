@@ -15,8 +15,9 @@ import attr
 import coalaip.model_validators as validators
 
 from coalaip import context_urls
+from coalaip.data_formats import _extract_ld_data
 from coalaip.exceptions import ModelDataError, ModelNotYetLoadedError
-from coalaip.utils import extend_dict, PostInitImmutable, _extract_ld_data
+from coalaip.utils import extend_dict, PostInitImmutable
 
 
 def get_default_ld_context():

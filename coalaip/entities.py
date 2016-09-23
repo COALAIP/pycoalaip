@@ -14,6 +14,10 @@ import attr
 
 from abc import ABC, abstractmethod
 from copy import copy
+from coalaip.data_formats import (
+    _data_format_resolver,
+    _extract_ld_data,
+)
 from coalaip.exceptions import (
     EntityError,
     EntityNotYetPersistedError,
@@ -30,11 +34,7 @@ from coalaip.models import (
     rights_assignment_model_factory,
 )
 from coalaip.plugin import AbstractPlugin
-from coalaip.utils import (
-    PostInitImmutable,
-    _data_format_resolver,
-    _extract_ld_data,
-)
+from coalaip.utils import PostInitImmutable
 
 
 @attr.s(repr=False)
