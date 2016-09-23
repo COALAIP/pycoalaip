@@ -1,7 +1,5 @@
 from pytest import fixture
 
-from coalaip.context_urls import COALAIP
-from coalaip.models import DEFAULT_LD_CONTEXT
 from coalaip.utils import extend_dict
 
 
@@ -13,6 +11,18 @@ def alice_user():
 @fixture
 def bob_user():
     return {'name': 'bob'}
+
+
+@fixture
+def context_urls_coalaip():
+    from coalaip.context_urls import COALAIP
+    return COALAIP
+
+
+@fixture
+def context_urls_all():
+    from coalaip.context_urls import COALAIP, SCHEMA
+    return [COALAIP, SCHEMA]
 
 
 @fixture
@@ -57,9 +67,9 @@ def work_data():
 
 
 @fixture
-def work_jsonld(work_data):
+def work_jsonld(context_urls_all, work_data):
     ld_data = {
-        '@context': DEFAULT_LD_CONTEXT,
+        '@context': context_urls_all,
         '@type': 'CreativeWork',
         '@id': '',
     }
@@ -99,10 +109,10 @@ def manifestation_data_factory(mock_work_create_id):
 
 
 @fixture
-def manifestation_jsonld_factory(manifestation_data_factory):
+def manifestation_jsonld_factory(context_urls_all, manifestation_data_factory):
     def factory(**kwargs):
         ld_data = {
-            '@context': DEFAULT_LD_CONTEXT,
+            '@context': context_urls_all,
             '@type': 'CreativeWork',
             '@id': '',
             'isManifestation': True,
@@ -156,10 +166,10 @@ def copyright_data_factory(mock_manifestation_create_id):
 
 
 @fixture
-def copyright_jsonld_factory(copyright_data_factory):
+def copyright_jsonld_factory(context_urls_coalaip, copyright_data_factory):
     def factory(**kwargs):
         ld_data = {
-            '@context': COALAIP,
+            '@context': context_urls_coalaip,
             '@type': 'Copyright',
             '@id': '',
         }
@@ -200,10 +210,10 @@ def right_data_factory(mock_copyright_create_id):
 
 
 @fixture
-def right_jsonld_factory(right_data_factory):
+def right_jsonld_factory(context_urls_coalaip, right_data_factory):
     def factory(**kwargs):
         ld_data = {
-            '@context': COALAIP,
+            '@context': context_urls_coalaip,
             '@type': 'Right',
             '@id': '',
         }
@@ -246,9 +256,9 @@ def rights_assignment_data(transfer_contract_url):
 
 
 @fixture
-def rights_assignment_jsonld(rights_assignment_data):
+def rights_assignment_jsonld(context_urls_coalaip, rights_assignment_data):
     ld_data = {
-        '@context': DEFAULT_LD_CONTEXT,
+        '@context': context_urls_coalaip,
         '@type': 'RightsTransferAction',
         '@id': '',
     }
