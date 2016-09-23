@@ -1,4 +1,4 @@
-from pytest import fixture
+from pytest import fixture, mark, raises
 
 
 @fixture
@@ -24,6 +24,26 @@ def override_all_dict():
 @fixture
 def override_all_tuple_iter():
     return [('foo', 'tuple_overriden_foo'), ('bar', 'tuple_overriden_bar')]
+
+
+@mark.parametrize('data_format,format_resolved', [
+    ('json', 'json_resolved'),
+    ('jsonld', 'jsonld_resolved'),
+    ('ipld', 'ipld_resolved')
+])
+def test_data_format_resolver(data_format, format_resolved):
+    from coalaip.utils import data_format_resolver
+    resolver = {}
+    resolver[data_format] = format_resolved
+
+    resolved = data_format_resolver(data_format, resolver)
+    assert resolved == format_resolved
+
+
+def test_data_format_resolver_raises_on_bad_format():
+    from coalaip.utils import data_format_resolver
+    with raises(ValueError):
+        data_format_resolver('bad_format', {})
 
 
 def test_extend_dict_single_arg(base_dict):
