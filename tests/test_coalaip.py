@@ -5,9 +5,12 @@ from pytest import mark, raises
 
 def test_coalaip_expects_plugin():
     from coalaip.coalaip import CoalaIp
-
     with raises(TypeError):
         CoalaIp()
+
+
+def test_coalaip_expcects_subclassed_plugin():
+    from coalaip.coalaip import CoalaIp
 
     class NonSubclassPlugin():
         pass
@@ -31,17 +34,14 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
 
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
-def test_register_manifestation(mock_plugin, mock_coalaip,
-                                manifestation_data_factory, alice_user,
-                                data_format, use_data_format_enum,
+def test_register_manifestation(mock_plugin, mock_coalaip, manifestation_data,
+                                alice_user, data_format, use_data_format_enum,
                                 mock_work_create_id,
                                 mock_manifestation_create_id,
                                 mock_copyright_create_id):
     from tests.utils import create_entity_id_setter
 
-    # Create the default manifestation model, but remove the
-    # 'manifestationOfWork' key to create a new Work
-    manifestation_data = manifestation_data_factory()
+    # Remove the 'manifestationOfWork' key to create a new Work
     del manifestation_data['manifestationOfWork']
 
     # Set the persisted ids of the entities
@@ -52,6 +52,7 @@ def test_register_manifestation(mock_plugin, mock_coalaip,
         type_key='type' if data_format == 'json' else '@type',
     )
 
+    # Set up the data format
     register_manifestation_kwargs = {}
     if data_format:
         if use_data_format_enum:
@@ -106,8 +107,7 @@ def test_register_manifestation(mock_plugin, mock_coalaip,
 
 def test_register_manifestation_with_work_id_in_data(
         mock_plugin, mock_coalaip, manifestation_data_factory, alice_user,
-        work_entity, manifestation_entity, persisted_jsonld_registration,
-        mock_manifestation_create_id, mock_copyright_create_id):
+        work_entity, mock_manifestation_create_id, mock_copyright_create_id):
     from tests.utils import create_entity_id_setter
     ignored_work_entity = work_entity
     provided_work_id = 'provided_work_id'
@@ -137,17 +137,15 @@ def test_register_manifestation_with_work_id_in_data(
 
 @mark.parametrize('work_data', [None, {'name': 'mock_work_name'}])
 def test_register_manifestation_with_work_data(
-        mock_plugin, mock_coalaip, manifestation_data_factory, alice_user,
-        work_data, mock_work_create_id, mock_manifestation_create_id,
+        mock_plugin, mock_coalaip, manifestation_data, alice_user, work_data,
+        mock_work_create_id, mock_manifestation_create_id,
         mock_copyright_create_id):
     from tests.utils import (
         assert_key_values_present_in_dict,
         create_entity_id_setter
     )
 
-    # Create the default manifestation model, but remove the
-    # 'manifestationOfWork' key to create a new Work
-    manifestation_data = manifestation_data_factory()
+    # Remove the 'manifestationOfWork' key to create a new Work
     del manifestation_data['manifestationOfWork']
 
     # Set the persisted ids of the entities
@@ -179,18 +177,15 @@ def test_register_manifestation_with_work_data(
 
 
 def test_register_manifestation_with_existing_work(
-        mock_plugin, mock_coalaip, manifestation_data_factory, alice_user,
-        work_entity, manifestation_entity, persisted_jsonld_registration,
-        mock_manifestation_create_id, mock_copyright_create_id):
-    from coalaip.exceptions import EntityNotYetPersistedError
+        mock_plugin, mock_coalaip, manifestation_data, alice_user,
+        persisted_jsonld_registration, mock_manifestation_create_id,
+        mock_copyright_create_id):
     from tests.utils import create_entity_id_setter
 
     new_manifestation_create_id = mock_manifestation_create_id + '2'
     new_copyright_create_id = mock_copyright_create_id + '2'
 
-    # Create the default manifestation model, but remove the
-    # 'manifestationOfWork' key to use the existing_work
-    manifestation_data = manifestation_data_factory()
+    # Remove the 'manifestationOfWork' key to use the existing_work
     del manifestation_data['manifestationOfWork']
 
     # Set the persisted ids of the entities
@@ -199,22 +194,6 @@ def test_register_manifestation_with_existing_work(
         new_manifestation_create_id,
         new_copyright_create_id,
     )
-
-    # Throws if given existing_work is not a Work
-    with raises(TypeError):
-        mock_coalaip.register_manifestation(
-            manifestation_data,
-            user=alice_user,
-            existing_work={},
-        )
-
-    # Throws if given existing_work has not been persisted yet
-    with raises(EntityNotYetPersistedError):
-        mock_coalaip.register_manifestation(
-            manifestation_data,
-            user=alice_user,
-            existing_work=work_entity,
-        )
 
     # Test the new Manifestation is created with the given existing_work (and
     # ignores any given work_data)
@@ -249,14 +228,39 @@ def test_register_manifestation_with_existing_work(
     )
 
 
-def test_register_manifestation_raises_on_creation_error(
-        mock_plugin, mock_coalaip, manifestation_data_factory, alice_user):
-    from coalaip.exceptions import EntityCreationError
+def test_register_manifestation_with_existing_work_raises_on_non_work(
+        mock_coalaip, alice_user, manifestation_data):
+    # Remove the 'manifestationOfWork' key to use the existing_work
+    del manifestation_data['manifestationOfWork']
 
+    with raises(TypeError):
+        mock_coalaip.register_manifestation(
+            manifestation_data,
+            user=alice_user,
+            existing_work={},
+        )
+
+
+def test_register_manifestation_with_existing_work_raises_on_unpersisted_work(
+        mock_coalaip, alice_user, manifestation_data, work_entity):
+    from coalaip.exceptions import EntityNotYetPersistedError
+    # Remove the 'manifestationOfWork' key to use the existing_work
+    del manifestation_data['manifestationOfWork']
+
+    with raises(EntityNotYetPersistedError):
+        mock_coalaip.register_manifestation(
+            manifestation_data,
+            user=alice_user,
+            existing_work=work_entity,
+        )
+
+
+def test_register_manifestation_raises_on_creation_error(
+        mock_plugin, mock_coalaip, manifestation_data, alice_user):
+    from coalaip.exceptions import EntityCreationError
     mock_creation_error = 'mock_creation_error'
     mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
 
-    manifestation_data = manifestation_data_factory()
     with raises(EntityCreationError):
         mock_coalaip.register_manifestation(manifestation_data,
                                             user=alice_user)
@@ -264,13 +268,9 @@ def test_register_manifestation_raises_on_creation_error(
 
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
-def test_derive_right(mock_plugin, mock_coalaip, right_data_factory,
-                      alice_user, data_format, use_data_format_enum,
-                      mock_copyright_create_id, mock_right_create_id):
+def test_derive_right(mock_plugin, mock_coalaip, right_data, alice_user,
+                      data_format, use_data_format_enum, mock_right_create_id):
     mock_plugin.save.return_value = mock_right_create_id
-
-    # Create the default right model with 'allowedBy' already set
-    right_data = right_data_factory()
 
     derive_right_kwargs = {}
     if data_format:
@@ -320,28 +320,14 @@ def test_derive_right_with_allowed_by_in_data(mock_plugin, mock_coalaip,
 
 
 def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
-                                                 right_data_factory,
-                                                 alice_user, copyright_entity,
+                                                 right_data, alice_user,
                                                  persisted_jsonld_registration,
                                                  mock_right_create_id):
-    from coalaip.exceptions import EntityNotYetPersistedError
     persisted_copyright = persisted_jsonld_registration.copyright
     mock_plugin.save.return_value = mock_right_create_id
 
-    # Create the default right model, but remove the 'allowedBy' key to use
-    # the source_right
-    right_data = right_data_factory()
+    # Remove the 'allowedBy' key to use the source_right
     del right_data['allowedBy']
-
-    # Throws if given source_right is not a Right
-    with raises(TypeError):
-        mock_coalaip.derive_right(right_data, current_holder=alice_user,
-                                  source_right={})
-
-    # Throws if given source_right has not been persisted yet
-    with raises(EntityNotYetPersistedError):
-        mock_coalaip.derive_right(right_data, current_holder=alice_user,
-                                  source_right=copyright_entity)
 
     # Test the new Right is created with the given source_right
     mock_plugin.reset_mock()  # Reset call counts on the mock from before
@@ -354,8 +340,28 @@ def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
                                              user=alice_user)
 
 
+def test_derive_right_with_existing_source_right_raises_on_non_right(
+        mock_coalaip, alice_user, right_data):
+    # Remove the 'allowedBy' key to use the source_right
+    del right_data['allowedBy']
+    with raises(TypeError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                  source_right={})
+
+
+def test_derive_right_with_existing_source_right_raises_on_unpersisted_right(
+        mock_coalaip, alice_user, right_data, copyright_entity):
+    from coalaip.exceptions import EntityNotYetPersistedError
+
+    # Remove the 'allowedBy' key to use the source_right
+    del right_data['allowedBy']
+    with raises(EntityNotYetPersistedError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                  source_right=copyright_entity)
+
+
 def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
-                                             right_data_factory, alice_user,
+                                             right_data, alice_user,
                                              mock_right_create_id):
     from coalaip.entities import Right
     from coalaip.models import _model_factory
@@ -367,9 +373,6 @@ def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
         @classmethod
         def generate_model(cls, *args, **kwargs):
             return _model_factory(ld_type=custom_right_type, *args, **kwargs)
-
-    # Create the default right model with 'allowedBy' already set
-    right_data = right_data_factory()
 
     # Test the new Right is created with the given source_right
     custom_right = mock_coalaip.derive_right(
@@ -384,21 +387,18 @@ def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
 
 
 def test_derive_right_raises_on_no_allowed_by_or_source_right(
-        mock_plugin, mock_coalaip, right_data_factory, alice_user):
-
-    right_data = right_data_factory()
+        mock_plugin, mock_coalaip, right_data, alice_user):
     del right_data['allowedBy']
     with raises(ValueError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user)
 
 
 def test_derive_right_raises_on_creation_error(mock_plugin, mock_coalaip,
-                                               right_data_factory, alice_user):
+                                               right_data, alice_user):
     from coalaip.exceptions import EntityCreationError
 
     mock_creation_error = 'mock_creation_error'
     mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
 
-    right_data = right_data_factory()
     with raises(EntityCreationError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user)
