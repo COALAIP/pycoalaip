@@ -4,10 +4,10 @@ Requires usage with a persistence layer plugin (see
 :class:`~.AbstractPlugin`) for the creation and transfer of entities.
 JSON, JSON-LD, and IPLD data formats are supported.
 
-\*\*Note:\*\* this module should not be used directly to generate
-entities, unless you are extending the built-ins for your own
-extensions. Instead, use the high-level functions (:mod:`.coalaip`) that
-return instances of these entities.
+**Note:** this module should not be used directly to generate entities,
+unless you are extending the built-ins for your own extensions. Instead,
+use the high-level functions (:mod:`.coalaip`) that return instances of
+these entities.
 """
 
 import attr
@@ -42,21 +42,21 @@ from coalaip.utils import PostInitImmutable
 class Entity(ABC, PostInitImmutable):
     """Abstract base class of all COALA IP entity models.
 
-    \*\*Immutable (see :class:`.PostInitImmutable`)\*\*.
+    **Immutable (see :class:`.PostInitImmutable`)**.
 
     Implements base functionality for all COALA IP entities, including
     entity creation (:meth:`create`) and status queries (:attr:`status`)
     on the backing persistence layer provided by ``plugin``.
 
-    Subclasses \*\*must\*\* implement their own :meth:`generate_model`;
+    Subclasses **must** implement their own :meth:`generate_model`;
     :meth:`generate_model` determines the semantics behind
     :attr:`~Entity.model` (its creation and validation).
 
     Attributes:
-        model (:class:`~.Model` or :class:`~.LazyLoadableModel): Model
+        model (:class:`~.Model` or :class:`~.LazyLoadableModel`): Model
             of the entity. Holds the data and Linked Data (JSON-LD)
             specifics.
-        plugin (subclass of :class:`~.AbstractPlugin): Persistence
+        plugin (subclass of :class:`~.AbstractPlugin`): Persistence
             layer plugin used by the Entity
         persist_id (str): Id of this entity on the persistence layer, if
             saved to one. Initially ``None``.
@@ -117,12 +117,12 @@ class Entity(ABC, PostInitImmutable):
         """Generate a model instance for use with the current
         :attr:`cls`.
 
-        \*\*Must\*\* be implemented by subclasses of :class:`~.Entity`.
+        **Must** be implemented by subclasses of :class:`~.Entity`.
 
         Args:
             data (dict, keyword): Model data
-            ld_type (str, keyword): "@type" of the entity.
-            ld_context (str|[str|dict], keyword): "@context" for the
+            ld_type (str, keyword): @type of the entity.
+            ld_context (str or [str|dict], keyword): "@context" for the
                 entity as either a string URL or array of string URLs
                 or dictionaries. See the `JSON-LD spec on contexts
                 <https://www.w3.org/TR/json-ld/#the-context>`_ for more
@@ -150,6 +150,7 @@ class Entity(ABC, PostInitImmutable):
         special keys in :attr:`data` and will have different behaviour
         depending on the ``data_type`` requested in later methods (e.g.
         :meth:`create`):
+
             - jsonld:
                 - '@type' denotes the Linked Data type of the entity
                 - '@context' denotes the JSON-LD context of the entity
@@ -158,11 +159,11 @@ class Entity(ABC, PostInitImmutable):
 
         Args:
             data (dict): Model data for the entity
-            data_format (:class:`~.DataFormat`|str): Data format of
-                :attr:`data`; must be one of the :class:`~.DataFormat`s
+            data_format (:class:`~.DataFormat` or str): Data format of
+                :attr:`data`; must be a member of :class:`~.DataFormat`
                 or a string equivalent.
                 Defaults to jsonld.
-            plugin (subclass of :class:`~.AbstractPlugin, keyword):
+            plugin (subclass of :class:`~.AbstractPlugin`, keyword):
                 Persistence layer plugin used by generated :attr:`cls`
 
         Returns:
@@ -202,10 +203,10 @@ class Entity(ABC, PostInitImmutable):
         """Generic factory for creating :attr:`cls` entity instances
         from their persisted ids.
 
-        \*\*Note\*\*: by default, instances generated from this factory
+        **Note**: by default, instances generated from this factory
         lazily load their data upon first access (accessing
         :meth:`data`), which may throw under various conditions. In
-        general, most usages of ``Entity``s and its subclasses do not
+        general, most usages of ``Entity`` and its subclasses do not
         require access to their data (including internal methods), and
         thus the data does not usually need to be loaded unless you
         expect to explicitly use :meth:`data` or one of the
@@ -222,14 +223,14 @@ class Entity(ABC, PostInitImmutable):
                 entity's data immediately from the persistence layer
                 after instantiation.
                 Defaults to false.
-            plugin (subclass of :class:`~.AbstractPlugin, keyword):
+            plugin (subclass of :class:`~.AbstractPlugin`, keyword):
                 Persistence layer plugin used by generated :attr:`cls`
 
         Returns:
             :attr:`cls`: A generated entity based on :attr:`persist_id`
 
         Raises:
-            If :attr:`force_load` is True, see :meth:`load`'.
+            If :attr:`force_load` is ``True``, see :meth:`load`.
         """
 
         model = cls.generate_model(model_cls=LazyLoadableModel)
@@ -246,9 +247,9 @@ class Entity(ABC, PostInitImmutable):
         Args:
             user (any): A user based on the model specified by the
                 persistence layer
-            data_format (:class:`~.DataFormat`|str): Data format used in
-                persisting the entity; must be one of the
-                :class:`~.DataFormat`s or a string equivalent.
+            data_format (:class:`~.DataFormat` or str): Data format used
+                in persisting the entity; must be a member of
+                :class:`~.DataFormat` or a string equivalent.
                 Defaults to jsonld.
 
         Returns:
@@ -257,8 +258,8 @@ class Entity(ABC, PostInitImmutable):
         Raises:
             :exc:`~.EntityCreationError`: If an error occurred during
                 the creation of this entity that caused it to
-                \*\*NOT\*\* be persisted. Contains the original error
-                from the persistence layer, if available.
+                **NOT** be persisted. Contains the original error from
+                the persistence layer, if available.
             :exc:`~.EntityPreviouslyCreatedError`: If the entity has
                 already been persisted. Contains the existing id of the
                 entity on the persistence layer.
@@ -303,7 +304,7 @@ class Entity(ABC, PostInitImmutable):
     def to_json(self):
         """Output this entity as a JSON-serializable dict.
 
-        The entity's @type is represented as "type" and the @context is
+        The entity's @type is represented as 'type' and the @context is
         ignored.
         """
 
@@ -327,7 +328,7 @@ class Entity(ABC, PostInitImmutable):
     def to_ipld(self):
         """Output this entity's data as an IPLD-serializable dict.
 
-        The entity's @type is represented as "type" and the @context is
+        The entity's @type is represented as 'type' and the @context is
         ignored.
         """
 
@@ -381,9 +382,9 @@ class Work(Entity):
     """COALA IP's Work entity.
 
     A distinct, abstract Creation whose existence is revealed through
-    one or more :class:`~.Manifestation`s.
+    one or more :class:`~.Manifestation` entities.
 
-    :class:`~.Work`s are always of ``@type`` 'CreativeWork'.
+    :class:`~.Work` entities are always of @type 'CreativeWork'.
     """
 
     @classmethod
@@ -392,8 +393,8 @@ class Work(Entity):
 
         See :meth:`~.Entity.generate_model` for more details.
 
-        Ignores the given ``ld_type`` as :class:`~.Work`s are always
-        'CreativeWork's.
+        Ignores the given ``ld_type`` as :class:`~.Work` entities
+        always have @type 'CreativeWork'.
         """
         return work_model_factory(*args, **kwargs)
 
@@ -403,7 +404,8 @@ class Manifestation(Entity):
 
     A perceivable manifestation of a :class:`~.Work`.
 
-    :class:`~.Manifestation`s are by default of ``@type`` 'CreativeWork'.
+    :class:`~.Manifestation` entities are by default of @type
+    'CreativeWork'.
     """
 
     @classmethod
@@ -424,8 +426,8 @@ class Right(TransferrableEntity):
     More specific rights, such as ``PlaybackRights``, ``StreamRights``,
     etc should be implemented as subclasses of this class.
 
-    By default, :class:`~.Rights`s are of ``@type`` 'Right' and only
-    include the COALA IP context, as Rights are not dependent on
+    By default, :class:`~.Rights` entities are of @type 'Right' and
+    only include the COALA IP context, as Rights are not dependent on
     schema.org.
     """
 
@@ -475,9 +477,9 @@ class Copyright(Right):
     The full entitlement of Copyright to a :class:`~.Work` or
     :class:`~.Manifestation`.
 
-    :class:`~.Copyright`s are always of ``@type`` 'Copyright' and by
-    default only include the COALA IP context, as Copyrights are not
-    dependent on schema.org.
+    :class:`~.Copyright` entities are always of @type 'Copyright' and by
+    default only include the COALA IP context, they are not dependent on
+    schema.org.
     """
 
     @classmethod
@@ -486,7 +488,7 @@ class Copyright(Right):
 
         See :meth:`~.Entity.generate_model` for more details.
 
-        Ignores the given ``ld_type`` as :class:`~.Copyrights`s are
+        Ignores the given ``ld_type`` as :class:`~.Copyright` are
         always 'Copyright's.
         """
         return copyright_model_factory(*args, **kwargs)
@@ -497,17 +499,17 @@ class RightsAssignment(Entity):
 
     The assignment (e.g. transfer) of a :class:`~.Right` to someone.
 
-    :class:`.RightsAssignment`s may only be persisted in the underlying
-    persistence layer through transfer operations, and hence cannot be
-    created normally through :meth:`.create`.
+    :class:`.RightsAssignment` entities may only be persisted in the
+    underlying persistence layer through transfer operations, and hence
+    cannot be created normally through :meth:`.create`.
 
-    :class:`~.RightsAssignment`s are always of ``@type``
+    :class:`~.RightsAssignment` entities are always of @type
     'RightsAssignment' and by default only include the COALA IP context,
     as Copyrights are not dependent on schema.org.
     """
 
     def create(self, *args, **kwargs):
-        """Removes the ability to persist :class:`~.RightsAssignment`s
+        """Removes the ability to persist a :class:`~.RightsAssignment`
         normally. Raises :exc:`~.EntityError` if called.
         """
         raise EntityError(('RightsAssignments can only created through '
@@ -519,7 +521,7 @@ class RightsAssignment(Entity):
 
         See :meth:`~.Entity.generate_model` for more details.
 
-        Ignores the given ``ld_type`` as :class:`~.RightsAssignment`s
-        are always 'RightsTransferAction's.
+        Ignores the given ``ld_type`` as :class:`~.RightsAssignment`
+        entities always have @type 'RightsTransferAction's.
         """
         return rights_assignment_model_factory(*args, **kwargs)

@@ -16,6 +16,7 @@ class CoalaIp:
     Instantiated with an subclass implementing the ledger plugin
     interface (:class:`~.AbstractPlugin`) that will automatically be
     bound to all top-level functions:
+
         - :func:`generate_user`
         - :func:`register_manifestation`
         - :func:`derive_right`

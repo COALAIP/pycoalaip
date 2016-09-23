@@ -85,6 +85,7 @@ def is_manifestation_model(instance, attribute, value):
 def is_right_model(instance, attribute, value):
     """Must include either a ``rightsOf`` or ``allowedBy`` key (but not
     both):
+
         - ``rightsOf`` indicates that the Right contains full rights to
             an existing Manifestation or Work
         - ``allowedBy`` indicates that the Right is derived from and
