@@ -14,8 +14,8 @@ class CoalaIp:
     """High-level, plugin-bound COALA IP functions.
 
     Instantiated with an subclass implementing the ledger plugin
-    interface (:class:`~coalaip.plugin.AbstractPlugin`) that will
-    automatically be bound to all top-level functions:
+    interface (:class:`~.AbstractPlugin`) that will automatically be
+    bound to all top-level functions:
         - :func:`generate_user`
         - :func:`register_manifestation`
         - :func:`derive_right`
@@ -26,7 +26,7 @@ class CoalaIp:
         """Instantiate a new CoalaIp wrapper object.
 
         Args:
-            plugin (Plugin, keyword): the persistence layer plugin
+            plugin (Plugin, keyword): Persistence layer plugin
         """
 
         if not isinstance(plugin, AbstractPlugin):
@@ -65,40 +65,37 @@ class CoalaIp:
         new Work for the Manifestation.
 
         Args:
-            manifestation_data (dict): a dict holding the model data for
-                the Manifestation.
-                See :class:`~coalaip.models.Manifestation` for requirements.
+            manifestation_data (dict): Model data for the
+                :class:`.Manifestation`.
+                See :class:`~.Manifestation` for requirements.
                 If ``manifestationOfWork`` is provided in the dict, the
                 :attr:`existing_work` and :attr:`work_data` parameters are
                 ignored and no Work is registered.
-            user (any, keyword): a user based on the format specified by
+            user (any, keyword): A user based on the format specified by
                 the persistence layer
-            existing_work (:class:`~coalaip.models.Work`, keyword, optional):
-                an already persisted Work that the Manifestation is
-                derived from.
+            existing_work (:class:`~.Work`, keyword, optional): An
+                already persisted Work that the Manifestation is derived
+                from.
                 If specified, the :attr:`work_data` parameter is ignored
                 and no Work is registered.
-            work_data (dict, keyword, optional): a dict holding the
-                model data for the Work that will automatically
-                generated for the Manifestation if no existing work was
-                specified.
-                See :class:`~coalaip.models.Work` for requirements.
+            work_data (dict, keyword, optional): Model data for the Work
+                that will automatically generated for the Manifestation
+                if no :attr:`existing_work` was specified.
+                See :class:`~.Work` for requirements.
                 If not specified, the Work will be created using only
                 the name of the Manifestation.
-            **kwargs: keyword arguments passed through to each model's
-                :meth:`~coalaip.models.CoalaIpEntity.create` (e.g.
-                ``data_format``).
+            **kwargs: Keyword arguments passed through to each model's
+                :meth:`~.Entity.create` (e.g. ``data_format``).
 
         Returns:
-            :class:`~coalaip.coalaip.RegistrationResult`: a
-            :obj:`collections.namedtuple` containing the Coypright of
-            the registered Manifestation, the registered Manifestation,
-            and the Work as named fields::
+            :class:`~.RegistrationResult`: A :obj:`namedtuple`
+            containing the Coypright of the registered Manifestation,
+            the registered Manifestation, and the Work as named fields::
 
                 (
-                    'copyright': (:class:`~coalaip.models.Copyright`),
-                    'manifestation': (:class:`~coalaip.models.Manifestation`),
-                    'work': (:class:`~coalaip.models.Work`),
+                    'copyright': (:class:`~.Copyright`),
+                    'manifestation': (:class:`~.Manifestation`),
+                    'work': (:class:`~.Work`),
                 )
 
             If ``manifestationOfWork`` was provided in
@@ -107,15 +104,16 @@ class CoalaIp:
             automatically created Work will be returned.
 
         Raises:
-            :class:`~coalaip.exceptions.EntityDataError`: if the
-                :attr:`manifestation_data` or :attr:`work_data` contain
-                invalid or are missing required properties.
-            :class:`~coalaip.exceptions.EntityNotYetPersistedError`: if the
-                :attr:`existing_work` has not been persisted yet
-            :class:`~coalaip.exceptions.EntityCreationError`: if the
-                manifestation, its copyright, or the automatically
-                created work (if no existing work is given) fail to be
-                created on the persistence layer
+            :exc:`~.ModelDataError`: If the :attr:`manifestation_data`
+                or :attr:`work_data` contain invalid or are missing
+                required properties.
+            :exc:`~.EntityNotYetPersistedError`: if the
+                :attr:`existing_work` is not associated with an id on the
+                persistence layer (:attr:`~Entity.persist_id`) yet
+            :exc:`~.EntityCreationError`: if the manifestation, its
+                copyright, or the automatically created work (if no
+                existing work is given) fail to be created on the
+                persistence layer
         """
 
         # TODO: in the future, we may want to consider blocking (or asyncing) until
@@ -157,44 +155,41 @@ class CoalaIp:
     def derive_right(self, right_data, *, current_holder, source_right=None,
                      right_entity_cls=Right, **kwargs):
         """Derive a new Right from an existing :attr:`source_right` (a
-        :class:`~coalaip.models.Right` or subclass) for the
-        :attr:`current_holder` of the :attr:`source_right`. The newly
-        registered Right can then be transferred to other Parties.
+        :class:`~.Right` or subclass) for the :attr:`current_holder` of
+        the :attr:`source_right`. The newly registered Right can then be
+        transferred to other Parties.
 
         Args:
-            right_data (dict): a dict holding the model data for the
-                Right.
-                See the given :attr:`right_model_cls` for requirements.
+            right_data (dict): Model data for the :attr:`right_entity_cls`.
+                See the given :attr:`right_entity_cls` for requirements.
                 If ``allowedBy`` is provided in the dict, the
                 :attr:`source_right` parameter is ignored.
-            current_holder (any, keyword): the current holder of the
+            current_holder (any, keyword): The current holder of the
                 :attr:`source_right`; a user based on the format
                 specified by the persistence layer
-            source_right (:class:`~coalaip.models.Right`, keyword, optional):
-                an already persisted Right that the new Right is allowed
-                by.
+            source_right (:class:`~.Right`, keyword, optional): An
+                already persisted Right that the new Right is allowed by.
                 Optional if ``allowedBy`` is provided in :attr:`right_data`.
-            right_model_cls (Right, keyword, optional): a subclass of
-                :class:`~coalaip.models.Right` that should be
-                instantiated for the newly derived right.
-                Defaults to :class:~coalaip.models.Right`.
-            **kwargs: keyword arguments passed through to the
-                :attr:`right_model_cls`'s ``create`` method (e.g.
-                :meth:`~coalaip.models.CoalaIpEntity.create`'s
-                ``data_format``)
+            right_entity_cls (subclass of :class:`~.Right`, keyword, optional):
+                the class that should be instantiated for the newly
+                derived right.
+                Defaults to :class:`~.Right`.
+            **kwargs: Keyword arguments passed through to the
+                :attr:`right_entity_cls`'s ``create`` method (e.g.
+                :meth:`~Entity.create`'s ``data_format``)
 
         Returns:
-            a registered :attr:`right_model_cls` Right model (by default a
-            :class:`~coalaip.models.Right)
+            A registered :attr:`right_entity_cls` Right (by default a
+            :class:`~.Right`)
 
         Raises:
-            :class:`~coalaip.exceptions.EntityDataError`: if the
-                :attr:`right_data` contains invalid or is missing
-                required properties.
-            :class:`~coalaip.exceptions.EntityNotYetPersistedError`: if
-                the :attr:`source_right` has not been persisted yet
-            :class:`~coalaip.exceptions.EntityCreationError`: if the
-                right fails to be created on the persistence layer
+            :exc:`~.ModelDataError`: If the :attr:`right_data`
+                contains invalid or is missing required properties.
+            :exc:`~.EntityNotYetPersistedError`: if the
+                :attr:`source_right` is not associated with an id on the
+                persistence layer (:attr:`~Entity.persist_id`) yet
+            :exc:`~.EntityCreationError`: if the Right fails to be
+                created on the persistence layer
         """
 
         if not right_data.get('allowedBy'):
@@ -223,15 +218,15 @@ class CoalaIp:
         """Transfer a Right to another user.
 
         Args:
-            right (str): the id of the Right to transfer
-            rights_assignment_data (dict): a dict holding the model data
-                for the RightsAssignment
-            from_user (any, keyword): a user based on the format
+            right (str): Id of the Right to transfer
+            rights_assignment_data (dict): Model data for the
+                generated :class:`~.RightsAssignment`
+            from_user (any, keyword): A user based on the format
                 specified by the persistence layer
-            to_user (any, keyword): a user based on the format specified
+            to_user (any, keyword): A user based on the format specified
                 by the persistence layer
-            data_format (str, keyword, optional): the data format of the
-                saved RightsAssignment; must be one of:
+            data_format (str, keyword, optional): Data format of the
+                saved :class:`~.RightsAssignment`; must be one of:
                     - 'jsonld' (default)
                     - 'json'
                     - 'ipld'
