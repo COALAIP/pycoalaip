@@ -368,7 +368,7 @@ def test_manifestation_init_raises_if_no_name(mock_plugin, manifestation_data):
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
-def test_manifestation_init_raises_without_manifestation_of(
+def test_manifestation_init_raises_without_manifestation_of_work(
         mock_plugin, manifestation_data):
     from coalaip.entities import Manifestation
     from coalaip.exceptions import ModelDataError
@@ -377,7 +377,7 @@ def test_manifestation_init_raises_without_manifestation_of(
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
-def test_manifestation_init_raises_without_str_manifestation_of(
+def test_manifestation_init_raises_without_str_manifestation_of_work(
         mock_plugin, manifestation_data):
     from coalaip.entities import Manifestation
     from coalaip.exceptions import ModelDataError
