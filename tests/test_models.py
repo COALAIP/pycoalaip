@@ -192,18 +192,20 @@ def test_lazy_model_load_raises_on_model_validation(mock_plugin, work_jsonld,
     ('right_model_factory', 'right_data', 'right_jsonld'),
     ('rights_assignment_model_factory', 'rights_assignment_data', 'rights_assignment_jsonld'),
 ])
+@mark.parametrize('model_cls_name', ['Model', 'LazyLoadableModel'])
 def test_model_factories(model_factory_name, data_name, jsonld_name,
-                         request):
+                         model_cls_name, request):
     import importlib
     from tests.utils import assert_key_values_present_in_dict
 
     models = importlib.import_module('coalaip.models')
     model_factory = getattr(models, model_factory_name)
+    model_cls = getattr(models, model_cls_name)
 
     data = request.getfixturevalue(data_name)
     jsonld = request.getfixturevalue(jsonld_name)
 
-    model = model_factory(data=data)
+    model = model_factory(data=data, model_cls=model_cls)
     assert_key_values_present_in_dict(model.data, **data)
     assert model.ld_type == jsonld['@type']
     assert model.ld_context == jsonld['@context']
