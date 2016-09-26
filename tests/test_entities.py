@@ -131,14 +131,11 @@ def test_entity_init_from_data(mock_plugin, data_format, use_data_format_enum,
     assert entity.to_jsonld() == jsonld
 
 
-@mark.parametrize('entity_cls_name,entity_data_name', [
-    (e_cls, DATA_NAME_FOR_ENTITY_CLS[e_cls]) for e_cls in ALL_ENTITY_CLS
-])
-def test_entity_from_data_consistent(mock_plugin, entity_cls_name,
-                                     entity_data_name, request):
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_from_data_consistent(mock_plugin, entity_cls_name, request):
     from tests.utils import assert_key_values_present_in_dict
     entity_cls = get_entity_cls(entity_cls_name)
-    entity_data = request.getfixturevalue(entity_data_name)
+    entity_data = request.getfixturevalue(DATA_NAME_FOR_ENTITY_CLS[entity_cls_name])
 
     entity = entity_cls.from_data(data=entity_data, plugin=mock_plugin)
 
@@ -206,15 +203,57 @@ def test_non_strict_type_entity_keeps_diff_type_from_data(
     assert entity.to_jsonld()['@type'] == mock_entity_type
 
 
-def test_entity_init_from_data_other_context(mock_plugin, work_data,
-                                             work_jsonld, mock_entity_type):
-    from coalaip.entities import Work
-    work_data['@context'] = 'other_context'
-    work_jsonld['@context'] = 'other_context'
-    work = Work.from_data(work_data, plugin=mock_plugin)
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+@mark.parametrize('use_data_format_enum', [True, False])
+def test_entity_keeps_context_from_ld_data(mock_plugin, use_data_format_enum,
+                                           entity_cls_name,
+                                           mock_entity_context, request):
+    entity_cls = get_entity_cls(entity_cls_name)
 
-    # Test work keeps @context
-    assert work.to_jsonld() == work_jsonld
+    data = request.getfixturevalue(JSONLD_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    data['@context'] = mock_entity_context
+
+    data_format = 'jsonld'
+    if use_data_format_enum:
+        from tests.utils import get_data_format_enum_member
+        data_format = get_data_format_enum_member(data_format)
+
+    entity = entity_cls.from_data(data, data_format=data_format,
+                                  plugin=mock_plugin)
+
+    # Test entity keeps @context if the data's in JSON-LD
+    assert entity.model.ld_context == mock_entity_context
+    assert entity.to_jsonld()['@context'] == mock_entity_context
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+@mark.parametrize('use_data_format_enum', [True, False])
+@mark.parametrize('data_format', ['json', mark.skip('ipld')])
+def test_entity_ignores_context_from_non_ld_data(
+        mock_plugin, data_format, use_data_format_enum, entity_cls_name,
+        mock_entity_context, request):
+    entity_cls = get_entity_cls(entity_cls_name)
+
+    data = request.getfixturevalue(JSONLD_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    data['@context'] = mock_entity_context
+
+    kwargs = {}
+    if data_format:
+        if data_format == 'json':
+            data = request.getfixturevalue(JSON_NAME_FOR_ENTITY_CLS[entity_cls_name])
+            data['context'] = mock_entity_context
+
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format = get_data_format_enum_member(data_format)
+        kwargs['data_format'] = data_format
+    kwargs['data'] = data
+
+    entity = entity_cls.from_data(plugin=mock_plugin, **kwargs)
+
+    # Test entity ignores @context since the data wasn't in JSON-LD
+    assert entity.model.ld_context != mock_entity_context
+    assert entity.to_jsonld()['@context'] != mock_entity_context
 
 
 @mark.parametrize('entity_name', CREATABLE_ENTITIES)

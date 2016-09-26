@@ -60,6 +60,11 @@ def mock_entity_type():
 
 
 @fixture
+def mock_entity_context():
+    return 'mock_entity_context'
+
+
+@fixture
 def work_data():
     return {
         'name': 'Title',
