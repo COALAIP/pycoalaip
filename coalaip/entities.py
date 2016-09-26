@@ -304,7 +304,7 @@ class Entity(ABC, PostInitImmutable):
                                                   'until they have been '
                                                   'persisted'))
 
-            self.model.load()
+            self.model.load(self.persist_id, plugin=self.plugin)
 
     def to_json(self):
         """Output this entity as a JSON-serializable dict.
