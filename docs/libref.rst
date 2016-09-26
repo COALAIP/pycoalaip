@@ -26,7 +26,9 @@ Library Reference
 ^^^^^^^^^^^^^^^^^
 
 .. note:: Most of these core entity classes have their functionality
-          implemented through :class:`~.Entity`.
+          implemented through :class:`~.Entity`. See :class:`~.Entity`
+          for an overview of the base functionality of each of these
+          core entities.
 
 .. autoclass:: Work
     :members:
