@@ -149,10 +149,9 @@ def test_entity_from_data_consistent(mock_plugin, entity_cls_name,
 @mark.parametrize('entity_cls_name', ['Work', 'Copyright', 'RightsAssignment'])
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])
-def test_entity_with_static_type_ignores_diff_type(mock_plugin, data_format,
-                                                   use_data_format_enum,
-                                                   entity_cls_name,
-                                                   mock_entity_type, request):
+def test_strict_type_entity_ignores_diff_type_from_data(
+        mock_plugin, data_format, use_data_format_enum, entity_cls_name,
+        mock_entity_type, request):
     entity_cls = get_entity_cls(entity_cls_name)
 
     kwargs = {}
@@ -180,10 +179,9 @@ def test_entity_with_static_type_ignores_diff_type(mock_plugin, data_format,
 @mark.parametrize('entity_cls_name', ['Manifestation', 'Right'])
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])
-def test_entity_with_static_type_keeps_diff_type(mock_plugin, data_format,
-                                                 use_data_format_enum,
-                                                 entity_cls_name,
-                                                 mock_entity_type, request):
+def test_non_strict_type_entity_keeps_diff_type_from_data(
+        mock_plugin, data_format, use_data_format_enum, entity_cls_name,
+        mock_entity_type, request):
     entity_cls = get_entity_cls(entity_cls_name)
 
     kwargs = {}
