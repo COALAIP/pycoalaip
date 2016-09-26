@@ -57,7 +57,7 @@ class CoalaIp:
         return self._plugin.generate_user(*args, **kwargs)
 
     # TODO: could probably have a 'safe' check to make sure the entities are actually created
-    def register_manifestation(self, manifestation_data, *, user,
+    def register_manifestation(self, manifestation_data, *, copyright_holder,
                                existing_work=None, work_data=None, **kwargs):
         """Register a Manifestation and automatically assign its
         corresponding Copyright to the given :attr:`user`.
@@ -72,8 +72,10 @@ class CoalaIp:
                 If ``manifestationOfWork`` is provided in the dict, the
                 :attr:`existing_work` and :attr:`work_data` parameters are
                 ignored and no Work is registered.
-            user (any, keyword): A user based on the format specified by
-                the persistence layer
+            copyright_holder (any, keyword): The user to hold the
+                corresponding Copyright of the registered Manifestation;
+                should be specified in the format required by the
+                persistence layer
             existing_work (:class:`~.Work`, keyword, optional): An
                 already persisted Work that the Manifestation is derived
                 from.
@@ -127,7 +129,7 @@ class CoalaIp:
                 if work_data is None:
                     work_data = {'name': manifestation_data.get('name')}
                 work = Work.from_data(work_data, plugin=self._plugin)
-                work.create(user, **kwargs)
+                work.create(copyright_holder, **kwargs)
             elif not isinstance(existing_work, Work):
                 raise TypeError(("'existing_work' argument to "
                                  "'register_manifestation()' must be a Work. "
@@ -144,12 +146,12 @@ class CoalaIp:
 
         manifestation = Manifestation.from_data(manifestation_data,
                                                 plugin=self._plugin)
-        manifestation.create(user, **kwargs)
+        manifestation.create(copyright_holder, **kwargs)
 
         copyright_data = {'rightsOf': manifestation.persist_id}
         manifestation_copyright = Copyright.from_data(copyright_data,
                                                       plugin=self._plugin)
-        manifestation_copyright.create(user, **kwargs)
+        manifestation_copyright.create(copyright_holder, **kwargs)
 
         return RegistrationResult(manifestation_copyright, manifestation, work)
 
@@ -166,8 +168,8 @@ class CoalaIp:
                 If ``allowedBy`` is provided in the dict, the
                 :attr:`source_right` parameter is ignored.
             current_holder (any, keyword): The current holder of the
-                :attr:`source_right`; a user based on the format
-                specified by the persistence layer
+                :attr:`source_right`; should be specified in the format
+                required by the persistence layer
             source_right (:class:`~.Right`, keyword, optional): An
                 already persisted Right that the new Right is allowed by.
                 Optional if ``allowedBy`` is provided in :attr:`right_data`.

@@ -65,7 +65,7 @@ def test_register_manifestation(mock_plugin, mock_coalaip, manifestation_data,
     # Create the entities and test they contain the right links
     manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
         manifestation_data,
-        user=alice_user,
+        copyright_holder=alice_user,
         **register_manifestation_kwargs,
     )
     assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
@@ -127,7 +127,7 @@ def test_register_manifestation_with_work_id_in_data(
 
     manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
         manifestation_data,
-        user=alice_user,
+        copyright_holder=alice_user,
         existing_work=ignored_work_entity,
     )
     assert work is None
@@ -158,7 +158,7 @@ def test_register_manifestation_with_work_data(
     # Create the entities
     manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
         manifestation_data,
-        user=alice_user,
+        copyright_holder=alice_user,
         work_data=work_data,
     )
     assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
@@ -200,7 +200,7 @@ def test_register_manifestation_with_existing_work(
     mock_plugin.reset_mock()  # Reset call counts on the mock from before
     new_manifestation_copyright, new_manifestation, old_work = mock_coalaip.register_manifestation(
         manifestation_data,
-        user=alice_user,
+        copyright_holder=alice_user,
         existing_work=persisted_jsonld_registration.work,
         work_data={'ignored': 'ignored'},
     )
@@ -236,7 +236,7 @@ def test_register_manifestation_with_existing_work_raises_on_non_work(
     with raises(TypeError):
         mock_coalaip.register_manifestation(
             manifestation_data,
-            user=alice_user,
+            copyright_holder=alice_user,
             existing_work={},
         )
 
@@ -250,7 +250,7 @@ def test_register_manifestation_with_existing_work_raises_on_unpersisted_work(
     with raises(EntityNotYetPersistedError):
         mock_coalaip.register_manifestation(
             manifestation_data,
-            user=alice_user,
+            copyright_holder=alice_user,
             existing_work=work_entity,
         )
 
@@ -263,7 +263,7 @@ def test_register_manifestation_raises_on_creation_error(
 
     with raises(EntityCreationError):
         mock_coalaip.register_manifestation(manifestation_data,
-                                            user=alice_user)
+                                            copyright_holder=alice_user)
 
 
 @mark.parametrize('use_data_format_enum', [True, False])
