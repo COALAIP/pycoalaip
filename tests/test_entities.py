@@ -386,6 +386,15 @@ def test_manifestation_init_raises_without_str_manifestation_of_work(
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
+def test_manifestation_init_raises_with_false_is_manifestation(
+        mock_plugin, manifestation_data):
+    from coalaip.entities import Manifestation
+    from coalaip.exceptions import ModelDataError
+    manifestation_data['isManifestation'] = False
+    with raises(ModelDataError):
+        Manifestation.from_data(manifestation_data, plugin=mock_plugin)
+
+
 def test_right_init_raises_without_str_allowed_by(mock_plugin, right_data):
     from coalaip.entities import Right
     from coalaip.exceptions import ModelDataError
@@ -413,12 +422,13 @@ def test_copyright_init_raises_without_str_rights_of(mock_plugin,
         Copyright.from_data(copyright_data, plugin=mock_plugin)
 
 
-def test_copyright_init_raises_if_derived(mock_plugin, copyright_data,
+def test_copyright_init_raises_if_derived(mock_plugin, right_data,
                                           mock_copyright_create_id):
     from coalaip.entities import Copyright
     from coalaip.exceptions import ModelDataError
 
-    copyright_data['allowedBy'] = mock_copyright_create_id
+    copyright_data = right_data
+    assert copyright_data['allowedBy']
     with raises(ModelDataError):
         Copyright.from_data(copyright_data, plugin=mock_plugin)
 
