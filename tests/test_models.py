@@ -185,29 +185,23 @@ def test_lazy_model_load_raises_on_model_validation(mock_plugin, work_jsonld,
         model.load(mock_entity_create_id, plugin=mock_plugin)
 
 
-@mark.parametrize('model_factory_name,data_name,jsonld_name,are_fixtures_factory', [
-    ('work_model_factory', 'work_data', 'work_jsonld', False),
-    ('manifestation_model_factory', 'manifestation_data_factory', 'manifestation_jsonld_factory', True),
-    ('copyright_model_factory', 'copyright_data_factory', 'copyright_jsonld_factory', True),
-    ('right_model_factory', 'right_data_factory', 'right_jsonld_factory', True),
-    ('rights_assignment_model_factory', 'rights_assignment_data', 'rights_assignment_jsonld', False),
+@mark.parametrize('model_factory_name,data_name,jsonld_name', [
+    ('work_model_factory', 'work_data', 'work_jsonld'),
+    ('manifestation_model_factory', 'manifestation_data', 'manifestation_jsonld'),
+    ('copyright_model_factory', 'copyright_data', 'copyright_jsonld'),
+    ('right_model_factory', 'right_data', 'right_jsonld'),
+    ('rights_assignment_model_factory', 'rights_assignment_data', 'rights_assignment_jsonld'),
 ])
 def test_model_factories(model_factory_name, data_name, jsonld_name,
-                         are_fixtures_factory, request):
+                         request):
     import importlib
     from tests.utils import assert_key_values_present_in_dict
 
     models = importlib.import_module('coalaip.models')
     model_factory = getattr(models, model_factory_name)
 
-    if are_fixtures_factory:
-        data_factory = request.getfixturevalue(data_name)
-        jsonld_factory = request.getfixturevalue(jsonld_name)
-        data = data_factory()
-        jsonld = jsonld_factory()
-    else:
-        data = request.getfixturevalue(data_name)
-        jsonld = request.getfixturevalue(jsonld_name)
+    data = request.getfixturevalue(data_name)
+    jsonld = request.getfixturevalue(jsonld_name)
 
     model = model_factory(data=data)
     assert_key_values_present_in_dict(model.data, **data)
