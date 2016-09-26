@@ -256,6 +256,84 @@ def test_entity_ignores_context_from_non_ld_data(
     assert entity.to_jsonld()['@context'] != mock_entity_context
 
 
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_init_from_persist_id(mock_plugin, entity_cls_name,
+                                     mock_entity_create_id, request):
+    from coalaip.models import LazyLoadableModel
+    from coalaip.exceptions import ModelNotYetLoadedError
+    entity_cls = get_entity_cls(entity_cls_name)
+    entity_data = request.getfixturevalue(DATA_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    entity_from_data = entity_cls.from_data(entity_data, plugin=mock_plugin)
+
+    entity_from_persist_id = entity_cls.from_persist_id(mock_entity_create_id,
+                                                        plugin=mock_plugin)
+    assert entity_from_persist_id.persist_id == mock_entity_create_id
+    assert isinstance(entity_from_persist_id.model, LazyLoadableModel)
+    assert entity_from_persist_id.model.ld_type == entity_from_data.model.ld_type
+    assert entity_from_persist_id.model.ld_context == entity_from_data.model.ld_context
+    assert entity_from_persist_id.model.ld_type == entity_from_data.model.ld_type
+
+    with raises(ModelNotYetLoadedError):
+        entity_from_persist_id.model.data
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_init_from_persist_id_force_load(mocker, mock_plugin,
+                                                entity_cls_name,
+                                                mock_entity_create_id):
+    from coalaip.models import LazyLoadableModel
+    mocker.patch.object(LazyLoadableModel, 'load')
+
+    entity_cls = get_entity_cls(entity_cls_name)
+    entity_from_persist_id = entity_cls.from_persist_id(mock_entity_create_id,
+                                                        force_load=True,
+                                                        plugin=mock_plugin)
+    lazy_model = entity_from_persist_id.model
+    lazy_model.load.assert_called_once_with(mock_entity_create_id,
+                                            plugin=mock_plugin)
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_init_from_persist_id_can_load(mocker, mock_plugin,
+                                              entity_cls_name,
+                                              mock_entity_create_id):
+    from coalaip.models import LazyLoadableModel
+    mocker.patch.object(LazyLoadableModel, 'load')
+
+    entity_cls = get_entity_cls(entity_cls_name)
+    entity_from_persist_id = entity_cls.from_persist_id(mock_entity_create_id,
+                                                        plugin=mock_plugin)
+    lazy_model = entity_from_persist_id.model
+    entity_from_persist_id.load()
+    lazy_model.load.assert_called_once_with(mock_entity_create_id,
+                                            plugin=mock_plugin)
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_init_from_persist_id_loads_on_data_access(
+        mocker, mock_plugin, entity_cls_name, mock_entity_create_id,
+        mock_entity_type, request):
+    from coalaip.models import Model, LazyLoadableModel
+    mocker.patch.object(LazyLoadableModel, 'load')
+
+    entity_cls = get_entity_cls(entity_cls_name)
+    entity_data = request.getfixturevalue(DATA_NAME_FOR_ENTITY_CLS[entity_cls_name])
+    entity_from_persist_id = entity_cls.from_persist_id(mock_entity_create_id,
+                                                        plugin=mock_plugin)
+
+    lazy_model = entity_from_persist_id.model
+
+    def set_model(*args, **kwargs):
+        lazy_model.loaded_model = Model(entity_data, mock_entity_type)
+    lazy_model.load.side_effect = set_model
+
+    entity_from_persist_id.data
+    lazy_model.load.assert_called_once_with(mock_entity_create_id,
+                                            plugin=mock_plugin)
+    assert entity_from_persist_id.data == entity_data
+    assert entity_from_persist_id.model.data == entity_data
+
+
 @mark.parametrize('entity_name', CREATABLE_ENTITIES)
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
@@ -321,6 +399,18 @@ def test_entity_raises_on_creation_if_already_created(
     with raises(EntityPreviouslyCreatedError) as excinfo:
         entity.create(alice_user)
     assert mock_entity_create_id == excinfo.value.existing_id
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_raises_on_load_if_not_persisted(mock_plugin, entity_cls_name):
+    from coalaip.models import LazyLoadableModel
+    from coalaip.exceptions import EntityNotYetPersistedError
+    entity_cls = get_entity_cls(entity_cls_name)
+    model = entity_cls.generate_model(model_cls=LazyLoadableModel)
+    entity = entity_cls(model, mock_plugin)
+
+    with raises(EntityNotYetPersistedError):
+        entity.load()
 
 
 @mark.parametrize('entity_name', ALL_ENTITIES)
