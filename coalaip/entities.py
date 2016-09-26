@@ -72,13 +72,18 @@ class Entity(ABC, PostInitImmutable):
 
     def __repr__(self):
         persist_str = ', {plugin}@{persist_id}'.format(
-            plugin=self.plugin_type,
+            plugin=self.plugin.type,
             persist_id=self.persist_id
         ) if self.persist_id is not None else ''
 
+        try:
+            data_str = self.model.data
+        except ModelNotYetLoadedError:
+            data_str = 'Not loaded'
+
         return '{name}{persist}: {data}'.format(name=self.__class__.__name__,
                                                 persist=persist_str,
-                                                data=self.data)
+                                                data=data_str)
 
     @property
     def data(self):
