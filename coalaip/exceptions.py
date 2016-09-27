@@ -1,7 +1,12 @@
 """Custom exceptions for COALA IP"""
 
 
-class EntityError(Exception):
+class CoalaIpError(Exception):
+    """Base class for all Coala IP errors.
+    """
+
+
+class EntityError(CoalaIpError):
     """Base class for all entity errors."""
 
 
@@ -13,8 +18,8 @@ class EntityCreationError(EntityError):
 
     @property
     def error(self):
-        """Original error that caused the creation of the entity on the
-        persistence layer to fail
+        """:exc:`Exception`: Original error that caused the creation of
+        the entity on the persistence layer to fail
         """
         return self.args[0]
 
@@ -39,20 +44,34 @@ class EntityPreviouslyCreatedError(EntityError):
 
     @property
     def existing_id(self):
-        """Currently existing ID of the entity on the persistence
-        layer.
+        """:obj:`str:` Currently existing ID of the entity on the
+        persistence layer.
         """
         return self.args[0]
 
 
-class ModelError(Exception):
+class IncompatiblePluginError(CoalaIpError):
+    """Raised when entities with incompatible plugins are used together.
+    Should contain a list of the incompatible plugins as the first
+    argument.
+    """
+
+    @property
+    def incompatible_plugins(self):
+        """:obj:`list` of :class:`~coalaip.plugin.AbstractPlugin`:
+        Incompatible plugins
+        """
+        return self.args[0]
+
+
+class ModelError(CoalaIpError):
     """Base class for all model errors."""
 
 
-class ModelDataError(EntityError, ValueError):
+class ModelDataError(ModelError, ValueError):
     """Raised if there is an error with the model's data"""
 
 
-class ModelNotYetLoadedError(EntityError):
+class ModelNotYetLoadedError(ModelError):
     """Raised if the lazily loaded model has not been loaded from the
     backing persistence layer yet."""
