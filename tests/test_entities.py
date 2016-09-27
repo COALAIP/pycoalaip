@@ -371,8 +371,8 @@ def test_entity_create_raises_on_bad_format(alice_user, entity_name, request):
 
 
 @mark.parametrize('entity_name', CREATABLE_ENTITIES)
-def test_entity_raises_on_creation_error(mock_plugin, alice_user, entity_name,
-                                         request):
+def test_entity_create_raises_on_creation_error(mock_plugin, alice_user,
+                                                entity_name, request):
     from coalaip.exceptions import EntityCreationError
     mock_creation_error = 'mock_creation_error'
     mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
@@ -384,7 +384,7 @@ def test_entity_raises_on_creation_error(mock_plugin, alice_user, entity_name,
 
 
 @mark.parametrize('entity_name', CREATABLE_ENTITIES)
-def test_entity_raises_on_creation_if_already_created(
+def test_entity_create_raises_on_creation_if_already_created(
         mock_plugin, alice_user, entity_name, mock_entity_create_id, request):
     from coalaip.exceptions import EntityPreviouslyCreatedError
     entity = request.getfixturevalue(entity_name)
@@ -400,7 +400,7 @@ def test_entity_raises_on_creation_if_already_created(
 
 
 @mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
-def test_entity_raises_on_load_if_not_persisted(mock_plugin, entity_cls_name):
+def test_entity_load_raises_if_not_persisted(mock_plugin, entity_cls_name):
     from coalaip.models import LazyLoadableModel
     from coalaip.exceptions import EntityNotYetPersistedError
     entity_cls = get_entity_cls(entity_cls_name)
@@ -435,9 +435,9 @@ def test_entity_get_status(mock_plugin, alice_user, entity_name,
 
 
 @mark.parametrize('entity_name', ALL_ENTITIES)
-def test_entity_raises_on_status_if_not_found(mock_plugin, alice_user,
-                                              entity_name,
-                                              mock_entity_create_id, request):
+def test_entity_status_raises_if_not_found(mock_plugin, alice_user,
+                                           entity_name, mock_entity_create_id,
+                                           request):
     from coalaip.exceptions import EntityNotFoundError
     entity = request.getfixturevalue(entity_name)
 
