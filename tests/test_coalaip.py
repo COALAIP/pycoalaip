@@ -365,6 +365,32 @@ def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
                                              user=alice_user)
 
 
+def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
+                                             right_data, alice_user,
+                                             mock_right_create_id):
+    from coalaip.entities import Right
+    from coalaip.models import _model_factory
+    mock_plugin.save.return_value = mock_right_create_id
+
+    custom_right_type = 'CustomRight'
+
+    class CustomRight(Right):
+        @classmethod
+        def generate_model(cls, *args, **kwargs):
+            return _model_factory(ld_type=custom_right_type, *args, **kwargs)
+
+    # Test the new Right is created with the given source_right
+    custom_right = mock_coalaip.derive_right(
+        right_data,
+        current_holder=alice_user,
+        right_entity_cls=CustomRight
+    )
+    assert isinstance(custom_right, CustomRight)
+    assert custom_right.to_json()['type'] == custom_right_type
+    assert custom_right.persist_id == mock_right_create_id
+    assert custom_right.data['allowedBy'] == right_data['allowedBy']
+
+
 def test_derive_right_with_existing_source_right_raises_on_non_right(
         mock_coalaip, alice_user, right_data):
     # Remove the 'allowedBy' key to use the source_right
@@ -405,32 +431,6 @@ def test_derive_right_with_existing_source_right_raises_on_incompatible_plugin(
     with raises(IncompatiblePluginError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                   source_right=source_right_from_diff_plugin)
-
-
-def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
-                                             right_data, alice_user,
-                                             mock_right_create_id):
-    from coalaip.entities import Right
-    from coalaip.models import _model_factory
-    mock_plugin.save.return_value = mock_right_create_id
-
-    custom_right_type = 'CustomRight'
-
-    class CustomRight(Right):
-        @classmethod
-        def generate_model(cls, *args, **kwargs):
-            return _model_factory(ld_type=custom_right_type, *args, **kwargs)
-
-    # Test the new Right is created with the given source_right
-    custom_right = mock_coalaip.derive_right(
-        right_data,
-        current_holder=alice_user,
-        right_entity_cls=CustomRight
-    )
-    assert isinstance(custom_right, CustomRight)
-    assert custom_right.to_json()['type'] == custom_right_type
-    assert custom_right.persist_id == mock_right_create_id
-    assert custom_right.data['allowedBy'] == right_data['allowedBy']
 
 
 def test_derive_right_raises_on_no_allowed_by_or_source_right(
