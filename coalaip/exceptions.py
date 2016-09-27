@@ -49,10 +49,10 @@ class ModelError(Exception):
     """Base class for all model errors."""
 
 
-class ModelDataError(EntityError, ValueError):
+class ModelDataError(ModelError, ValueError):
     """Raised if there is an error with the model's data"""
 
 
-class ModelNotYetLoadedError(EntityError):
+class ModelNotYetLoadedError(ModelError):
     """Raised if the lazily loaded model has not been loaded from the
     backing persistence layer yet."""
