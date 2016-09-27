@@ -241,7 +241,7 @@ def test_register_manifestation_with_existing_work_raises_on_non_work(
         )
 
 
-def test_register_manifestation_with_existing_work_raises_on_unpersisted_work(
+def test_register_manifestation_with_existing_work_raises_on_not_persisted_work(
         mock_coalaip, alice_user, manifestation_data, work_entity):
     from coalaip.exceptions import EntityNotYetPersistedError
     # Remove the 'manifestationOfWork' key to use the existing_work
@@ -400,7 +400,7 @@ def test_derive_right_with_existing_source_right_raises_on_non_right(
                                   source_right={})
 
 
-def test_derive_right_with_existing_source_right_raises_on_unpersisted_right(
+def test_derive_right_with_existing_source_right_raises_on_not_persisted_right(
         mock_coalaip, alice_user, right_data, copyright_entity):
     from coalaip.exceptions import EntityNotYetPersistedError
 
