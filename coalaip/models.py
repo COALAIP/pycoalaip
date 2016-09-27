@@ -15,7 +15,11 @@ import coalaip.model_validators as validators
 
 from coalaip import context_urls
 from coalaip.data_formats import _extract_ld_data
-from coalaip.exceptions import ModelDataError, ModelNotYetLoadedError
+from coalaip.exceptions import (
+    ModelError,
+    ModelDataError,
+    ModelNotYetLoadedError,
+)
 from coalaip.utils import extend_dict, PostInitImmutable
 
 
@@ -175,13 +179,31 @@ def _model_factory(*, data=None, default_data=None, model_cls=Model, **kwargs):
     return model_cls(data=data, **kwargs)
 
 
-# FIXME: Works, Copyrights, and RightsAssignments should throw if given ld_type
-# that is not what they expect
+def _raise_if_not_given_ld_type(model_name, strict_ld_type):
+    def decorator(func):
+        def raise_if_not_given_type(*args, **kwargs):
+            ld_type = kwargs.get('ld_type')
+            if ld_type is not None and ld_type != strict_ld_type:
+                raise ModelError("{name} models must be of '@type' "
+                                 "'{strict_type}. Given '{given_type}'"
+                                 .format(name=model_name,
+                                         strict_type=strict_ld_type,
+                                         given_type=ld_type))
+            return func(*args, **kwargs)
+        return raise_if_not_given_type
+    return decorator
+
+
+@_raise_if_not_given_ld_type('Work', 'CreativeWork')
 def work_model_factory(*, validator=validators.is_work_model, **kwargs):
     """Generate a Work model.
 
     Expects ``data``, ``validator``, ``model_cls``, and ``ld_context``
     as keyword arguments.
+
+    Raises:
+        :exc:`ModelError`: If a non-'CreativeWork' ``ld_type`` keyword
+            argument is given.
     """
     kwargs['ld_type'] = 'CreativeWork'
     return _model_factory(validator=validator, **kwargs)
@@ -210,23 +232,33 @@ def right_model_factory(*, validator=validators.is_right_model,
                           ld_context=ld_context, **kwargs)
 
 
+@_raise_if_not_given_ld_type('Copyright', 'Copyright')
 def copyright_model_factory(*, validator=validators.is_copyright_model,
                             ld_context=context_urls.COALAIP, **kwargs):
     """Generate a Copyright model.
 
     Expects ``data``, ``validator``, ``model_cls``, and ``ld_context``
     as keyword arguments.
+
+    Raises:
+        :exc:`ModelError`: If a non-'Copyright' ``ld_type`` keyword
+            argument is given.
     """
     kwargs['ld_type'] = 'Copyright'
     return _model_factory(validator=validator, ld_context=ld_context, **kwargs)
 
 
+@_raise_if_not_given_ld_type('RightsAssignment', 'RightsTransferAction')
 def rights_assignment_model_factory(*, ld_context=context_urls.COALAIP,
                                     **kwargs):
     """Generate a RightsAssignment model.
 
     Expects ``data``, ``validator``, ``model_cls``, and ``ld_context``
     as keyword arguments.
+
+    Raises:
+        :exc:`ModelError`: If a non-'RightsTransferAction' ``ld_type``
+            keyword argument is given.
     """
     kwargs['ld_type'] = 'RightsTransferAction'
     return _model_factory(ld_context=ld_context, **kwargs)

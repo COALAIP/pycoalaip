@@ -146,9 +146,10 @@ def test_entity_from_data_consistent(mock_plugin, entity_cls_name, request):
 @mark.parametrize('entity_cls_name', ['Work', 'Copyright', 'RightsAssignment'])
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])
-def test_strict_type_entity_ignores_diff_type_from_data(
+def test_strict_type_entity_raises_on_diff_type_from_data(
         mock_plugin, data_format, use_data_format_enum, entity_cls_name,
         mock_entity_type, request):
+    from coalaip.exceptions import ModelError
     entity_cls = get_entity_cls(entity_cls_name)
 
     kwargs = {}
@@ -166,11 +167,8 @@ def test_strict_type_entity_ignores_diff_type_from_data(
         kwargs['data_format'] = data_format
     kwargs['data'] = data
 
-    entity = entity_cls.from_data(plugin=mock_plugin, **kwargs)
-
-    # Test entity ignores specified @type
-    assert entity.model.ld_type != mock_entity_type
-    assert entity.to_jsonld()['@type'] != mock_entity_type
+    with raises(ModelError):
+        entity_cls.from_data(plugin=mock_plugin, **kwargs)
 
 
 @mark.parametrize('entity_cls_name', ['Manifestation', 'Right'])
