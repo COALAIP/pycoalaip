@@ -1,7 +1,10 @@
 """High-level functions for interacting with COALA IP entities"""
 
 from collections import namedtuple
-from coalaip.exceptions import EntityNotYetPersistedError
+from coalaip.exceptions import (
+    EntityNotYetPersistedError,
+    IncompatiblePluginError,
+)
 from coalaip.entities import Copyright, Right, Manifestation, Work
 from coalaip.plugin import AbstractPlugin
 
@@ -79,6 +82,8 @@ class CoalaIp:
             existing_work (:class:`~.Work`, keyword, optional): An
                 already persisted Work that the Manifestation is derived
                 from.
+                Must be using the same plugin that :class:`CoalaIp` was
+                instantiated with.
                 If specified, the :attr:`work_data` parameter is ignored
                 and no Work is registered.
             work_data (dict, keyword, optional): Model data for the Work
@@ -117,6 +122,8 @@ class CoalaIp:
                 copyright, or the automatically created work (if no
                 existing work is given) fail to be created on the
                 persistence layer
+            :class:`~coalaip.exceptions.IncompatiblePluginError`: If the
+                :attr:`existing_work` is not using a compatible plugin
         """
 
         # TODO: in the future, we may want to consider blocking (or asyncing) until
@@ -141,6 +148,11 @@ class CoalaIp:
                      "'register_manifestation()' must be already created on "
                      'the backing persistence layer.')
                 )
+            elif existing_work.plugin != self._plugin:
+                raise IncompatiblePluginError([
+                    self._plugin,
+                    existing_work.plugin,
+                ])
 
             manifestation_data['manifestationOfWork'] = work.persist_id
 
@@ -172,6 +184,8 @@ class CoalaIp:
                 required by the persistence layer
             source_right (:class:`~.Right`, keyword, optional): An
                 already persisted Right that the new Right is allowed by.
+                Must be using the same plugin that :class:`CoalaIp` was
+                instantiated with.
                 Optional if ``allowedBy`` is provided in :attr:`right_data`.
             right_entity_cls (subclass of :class:`~.Right`, keyword, optional):
                 the class that should be instantiated for the newly
@@ -209,6 +223,11 @@ class CoalaIp:
                     ("Right given as 'source_right' to 'derive_right()' must "
                      'be already created on the backing persistence layer.')
                 )
+            elif source_right.plugin != self._plugin:
+                raise IncompatiblePluginError([
+                    self._plugin,
+                    source_right.plugin,
+                ])
 
             right_data['allowedBy'] = source_right.persist_id
 
