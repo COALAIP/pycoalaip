@@ -209,12 +209,15 @@ class CoalaIp:
                 created on the persistence layer
         """
 
+        # TODO: add validation that the `current_user` is actually the holder
+        # of the `source_right`
+
         if not right_data.get('allowedBy'):
             if source_right is None:
                 raise ValueError(("'source_right' argument to 'derive_right() "
                                   "must be provided if 'allowedBy' is not "
                                   "given as part of 'right_data'"))
-            if not isinstance(source_right, Right):
+            elif not isinstance(source_right, Right):
                 raise TypeError(("'source_right' argument to 'derive_right()' "
                                  'must be a Right (or subclass). Given an '
                                  "instance of '{}'".format(type(source_right))))
@@ -235,25 +238,48 @@ class CoalaIp:
         right.create(current_holder, **kwargs)
         return right
 
-    def transfer_right(self, right, rights_assignment_data, *, from_user, to_user,
-                       data_format=None):
+    def transfer_right(self, right, rights_assignment_data=None, *,
+                       current_holder, to, **kwargs):
         """Transfer a Right to another user.
 
         Args:
-            right (str): Id of the Right to transfer
-            rights_assignment_data (dict): Model data for the
-                generated :class:`~.RightsAssignment`
-            from_user (any, keyword): A user based on the format
-                specified by the persistence layer
-            to_user (any, keyword): A user based on the format specified
-                by the persistence layer
-            data_format (str, keyword, optional): Data format of the
-                saved :class:`~.RightsAssignment`; must be one of:
-                    - 'jsonld' (default)
-                    - 'json'
-                    - 'ipld'
+            right (:class:`~.Right`): An already persisted Right to
+                transfer
+            rights_assignment_data (dict, optional): Model data for the
+                generated :class:`~.RightsAssignment` that will be
+                associated with the transfer
+            current_holder (any, keyword): The current holder of the
+                :attr:`right`; must be specified in the format
+                required by the persistence layer
+            to (any, keyword): The new holder of the right; must be
+                specified in the the format required by the persistence
+                layer
+            **kwargs: keyword arguments passed through to the
+                :attr:`right`'s ``transfer`` method (e.g.
+                :meth:`~.Right.transfer`'s ``rights_assignment_format``)
 
         Returns:
+            :class:`~.RightsAssignment`: the RightsAssignment entity
+            associated with this transfer
+
+        Raises:
+            :exc:`~.EntityNotYetPersistedError`: if the :attr:`right`
+                has not been persisted yet
+            :exc:`~.EntityTransferError`: if the :attr:`right` fails to
+                be transferred on the persistence layer
         """
 
-        raise NotImplementedError('transfer_right() has not been implemented yet')
+        if not isinstance(right, Right):
+            raise TypeError(("'right' argument to 'transfer_right()' must be "
+                             'a Right (or subclass). Given '
+                             "'{}'".format(right)))
+        elif right.persist_id is None:
+            raise EntityNotYetPersistedError(
+                ("Right given as 'right' to 'transfer_right()' must be "
+                 'already created on the backing persistence layer.')
+            )
+        elif right.plugin != self._plugin:
+            raise IncompatiblePluginError([self._plugin, right.plugin])
+
+        return right.transfer(rights_assignment_data, from_user=current_holder,
+                              to_user=to, **kwargs)

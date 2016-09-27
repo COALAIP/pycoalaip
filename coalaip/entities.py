@@ -367,11 +367,15 @@ class TransferrableEntity(Entity):
                 persistence layer
 
         Returns:
+            str: the id of the resulting transfer action on the
+            persistence layer
 
         Raises:
             :exc:`~.EntityNotYetPersistedError`: If the entity being
                 transferred is not associated with an id on the
                 persistence layer (:attr:`~Entity.persist_id`) yet
+            :exc:`~.EntityTransferError`: if the entity fails to be
+                transferred on the persistence layer
         """
 
         if self.persist_id is None:
@@ -463,17 +467,23 @@ class Right(TransferrableEntity):
                     - 'ipld'
 
         Returns:
+            :class:`~.RightsAssignment`: the RightsAssignment entity
+            created from this transfer
+
+        Raises:
+            See :meth:`~.TransferrableEntity.transfer`
         """
 
-        transfer_payload = None
-        if rights_assignment_data is not None:
-            rights_assignment = RightsAssignment.from_data(
-                rights_assignment_data, plugin=self.plugin)
-            transfer_payload = rights_assignment._to_format(
-                rights_assignment_format)
+        rights_assignment = RightsAssignment.from_data(
+            rights_assignment_data or {},
+            plugin=self.plugin)
+        transfer_payload = rights_assignment._to_format(
+            data_format=rights_assignment_format)
+        transfer_id = super().transfer(transfer_payload, from_user=from_user,
+                                       to_user=to_user)
 
-        return super().transfer(transfer_payload, from_user=from_user,
-                                to_user=to_user)
+        rights_assignment.persist_id = transfer_id
+        return rights_assignment
 
 
 class Copyright(Right):
@@ -517,7 +527,7 @@ class RightsAssignment(Entity):
         """Removes the ability to persist a :class:`~.RightsAssignment`
         normally. Raises :exc:`~.EntityError` if called.
         """
-        raise EntityError(('RightsAssignments can only created through '
+        raise EntityError(('RightsAssignments can only be created through '
                            'transer transactions.'))
 
     @classmethod

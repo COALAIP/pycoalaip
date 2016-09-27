@@ -50,6 +50,20 @@ class EntityPreviouslyCreatedError(EntityError):
         return self.args[0]
 
 
+class EntityTransferError(EntityError):
+    """Raised if an error occured during the transfer of an entity.
+    Should contain the original error that caused the failure as the
+    first argument, if available.
+    """
+
+    @property
+    def error(self):
+        """:exc:`Exception`: Original error that caused the transfer of
+        the entity on the persistence layer to fail
+        """
+        return self.args[0]
+
+
 class IncompatiblePluginError(CoalaIpError):
     """Raised when entities with incompatible plugins are used together.
     Should contain a list of the incompatible plugins as the first

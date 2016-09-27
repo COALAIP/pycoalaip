@@ -372,15 +372,16 @@ def test_entity_create_raises_on_bad_format(alice_user, entity_name, request):
 
 @mark.parametrize('entity_name', CREATABLE_ENTITIES)
 def test_entity_create_raises_on_creation_error(mock_plugin, alice_user,
-                                                entity_name, request):
+                                                entity_name,
+                                                mock_creation_error,
+                                                request):
     from coalaip.exceptions import EntityCreationError
-    mock_creation_error = 'mock_creation_error'
-    mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
+    mock_plugin.save.side_effect = mock_creation_error
 
     entity = request.getfixturevalue(entity_name)
     with raises(EntityCreationError) as excinfo:
         entity.create(alice_user)
-    assert mock_creation_error == excinfo.value.error
+    assert mock_creation_error == excinfo.value
 
 
 @mark.parametrize('entity_name', CREATABLE_ENTITIES)
@@ -574,7 +575,7 @@ def test_right_init_raises_with_both_rights_of_allowed_by(
     ('copyright_entity', 'mock_copyright_create_id'),
 ])
 @mark.parametrize('use_data_format_enum', [True, False])
-@mark.parametrize('data_format,rights_assignment_data_name', [
+@mark.parametrize('data_format,rights_assignment_saved_data_name', [
     ('', 'rights_assignment_jsonld'),
     ('json', 'rights_assignment_json'),
     ('jsonld', 'rights_assignment_jsonld'),
@@ -583,9 +584,9 @@ def test_right_init_raises_with_both_rights_of_allowed_by(
 def test_right_transferrable(mock_plugin, alice_user, bob_user,
                              rights_assignment_data, right_entity_name,
                              mock_create_id_name, data_format,
-                             rights_assignment_data_name,
+                             rights_assignment_saved_data_name,
                              use_data_format_enum,
-                             mock_rights_assignment_create_id, request):
+                             mock_rights_assignment_transfer_id, request):
     right_entity = request.getfixturevalue(right_entity_name)
     mock_create_id = request.getfixturevalue(mock_create_id_name)
 
@@ -594,7 +595,7 @@ def test_right_transferrable(mock_plugin, alice_user, bob_user,
     right_entity.create(user=alice_user)
 
     # Set up the arguments
-    mock_plugin.transfer.return_value = mock_rights_assignment_create_id
+    mock_plugin.transfer.return_value = mock_rights_assignment_transfer_id
     transfer_kwargs = {
         'from_user': alice_user,
         'to_user': bob_user
@@ -606,14 +607,15 @@ def test_right_transferrable(mock_plugin, alice_user, bob_user,
         transfer_kwargs['rights_assignment_format'] = data_format
 
     # Test the transfer
-    transfer_tx_id = right_entity.transfer(rights_assignment_data,
-                                           **transfer_kwargs)
-    assert transfer_tx_id == mock_rights_assignment_create_id
+    rights_assignment = right_entity.transfer(rights_assignment_data,
+                                              **transfer_kwargs)
+    assert rights_assignment.persist_id == mock_rights_assignment_transfer_id
+    assert rights_assignment.data == rights_assignment_data
 
-    rights_assignment_data = request.getfixturevalue(
-        rights_assignment_data_name)
+    rights_assignment_saved_data = request.getfixturevalue(
+        rights_assignment_saved_data_name)
     mock_plugin.transfer.assert_called_with(mock_create_id,
-                                            rights_assignment_data,
+                                            rights_assignment_saved_data,
                                             from_user=alice_user,
                                             to_user=bob_user)
 
@@ -634,6 +636,31 @@ def test_rights_assignment_cannot_create(rights_assignment_entity, alice_user):
     from coalaip.exceptions import EntityError
     with raises(EntityError):
         rights_assignment_entity.create(user=alice_user)
+
+
+@mark.parametrize('right_entity_name,right_create_id_name', [
+    ('right_entity', 'mock_right_create_id'),
+    ('copyright_entity', 'mock_copyright_create_id'),
+])
+def test_right_transfer_raises_on_transfer_error(mock_plugin, alice_user,
+                                                 bob_user, right_entity_name,
+                                                 right_create_id_name,
+                                                 rights_assignment_data,
+                                                 mock_transfer_error,
+                                                 request):
+    from coalaip.exceptions import EntityTransferError
+    mock_plugin.transfer.side_effect = mock_transfer_error
+
+    # Save the right
+    mock_create_id = request.getfixturevalue(right_create_id_name)
+    right_entity = request.getfixturevalue(right_entity_name)
+    mock_plugin.save.return_value = mock_create_id
+    right_entity.create(user=alice_user)
+
+    with raises(EntityTransferError) as excinfo:
+        right_entity.transfer(rights_assignment_data, from_user=alice_user,
+                              to_user=bob_user)
+    assert mock_transfer_error == excinfo.value
 
 
 @mark.skip('Rights Assignments require transfer() to be implemented')
