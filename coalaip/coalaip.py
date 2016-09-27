@@ -77,7 +77,7 @@ class CoalaIp:
                 ignored and no Work is registered.
             copyright_holder (any, keyword): The user to hold the
                 corresponding Copyright of the registered Manifestation;
-                should be specified in the format required by the
+                must be specified in the format required by the
                 persistence layer
             existing_work (:class:`~.Work`, keyword, optional): An
                 already persisted Work that the Manifestation is derived
@@ -117,12 +117,12 @@ class CoalaIp:
                 required properties.
             :exc:`~.EntityNotYetPersistedError`: if the
                 :attr:`existing_work` is not associated with an id on the
-                persistence layer (:attr:`~Entity.persist_id`) yet
+                persistence layer (:attr:`~.Entity.persist_id`) yet
             :exc:`~.EntityCreationError`: if the manifestation, its
                 copyright, or the automatically created work (if no
                 existing work is given) fail to be created on the
                 persistence layer
-            :class:`~coalaip.exceptions.IncompatiblePluginError`: If the
+            :class:`~.IncompatiblePluginError`: If the
                 :attr:`existing_work` is not using a compatible plugin
         """
 
@@ -180,7 +180,7 @@ class CoalaIp:
                 If ``allowedBy`` is provided in the dict, the
                 :attr:`source_right` parameter is ignored.
             current_holder (any, keyword): The current holder of the
-                :attr:`source_right`; should be specified in the format
+                :attr:`source_right`; must be specified in the format
                 required by the persistence layer
             source_right (:class:`~.Right`, keyword, optional): An
                 already persisted Right that the new Right is allowed by.
@@ -188,12 +188,12 @@ class CoalaIp:
                 instantiated with.
                 Optional if ``allowedBy`` is provided in :attr:`right_data`.
             right_entity_cls (subclass of :class:`~.Right`, keyword, optional):
-                the class that should be instantiated for the newly
+                The class that must be instantiated for the newly
                 derived right.
                 Defaults to :class:`~.Right`.
             **kwargs: Keyword arguments passed through to the
                 :attr:`right_entity_cls`'s ``create`` method (e.g.
-                :meth:`~Entity.create`'s ``data_format``)
+                :meth:`~.Entity.create`'s ``data_format``)
 
         Returns:
             A registered :attr:`right_entity_cls` Right (by default a
@@ -204,7 +204,7 @@ class CoalaIp:
                 contains invalid or is missing required properties.
             :exc:`~.EntityNotYetPersistedError`: if the
                 :attr:`source_right` is not associated with an id on the
-                persistence layer (:attr:`~Entity.persist_id`) yet
+                persistence layer (:attr:`~.Entity.persist_id`) yet
             :exc:`~.EntityCreationError`: if the Right fails to be
                 created on the persistence layer
         """
