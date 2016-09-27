@@ -65,6 +65,20 @@ def mock_entity_context():
 
 
 @fixture
+def mock_creation_error():
+    from coalaip.exceptions import EntityCreationError
+    exception = EntityCreationError(mock_creation_error)
+    return exception
+
+
+@fixture
+def mock_transfer_error():
+    from coalaip.exceptions import EntityTransferError
+    exception = EntityTransferError(mock_transfer_error)
+    return exception
+
+
+@fixture
 def work_data():
     return {
         'name': 'Title',
@@ -353,21 +367,19 @@ def rights_assignment_entity(mock_plugin, rights_assignment_data):
 
 
 @fixture
-def mock_rights_assignment_create_id():
-    return 'mock_rights_assignment_create_id'
+def mock_rights_assignment_transfer_id():
+    return 'mock_rights_assignment_transfer_id'
 
 
 @fixture
 def persisted_jsonld_registration(mock_plugin, mock_coalaip,
-                                  manifestation_data_factory, alice_user,
+                                  manifestation_data, alice_user,
                                   mock_work_create_id,
                                   mock_manifestation_create_id,
                                   mock_copyright_create_id):
     from tests.utils import create_entity_id_setter
 
-    # Create the default manifestation model, but remove the
-    # 'manifestationOfWork' key since it'll be created through registration
-    manifestation_data = manifestation_data_factory()
+    # Remove the 'manifestationOfWork' key to also register a new Work
     del manifestation_data['manifestationOfWork']
 
     # Set the persisted ids of the entities
@@ -376,7 +388,30 @@ def persisted_jsonld_registration(mock_plugin, mock_coalaip,
         mock_manifestation_create_id,
         mock_copyright_create_id)
 
-    return mock_coalaip.register_manifestation(
+    register_result = mock_coalaip.register_manifestation(
         manifestation_data,
         copyright_holder=alice_user,
     )
+
+    # Reset mock for later users
+    mock_plugin.save.reset_mock()
+    mock_plugin.save.side_effect = None
+    return register_result
+
+
+@fixture
+def persisted_jsonld_derived_right(mock_plugin, mock_coalaip, alice_user,
+                                   persisted_jsonld_registration, right_data,
+                                   mock_right_create_id):
+    copyright = persisted_jsonld_registration.copyright
+    # Remove the 'allowedBy' key to use the persisted copyright
+    del right_data['allowedBy']
+
+    mock_plugin.save.return_value = 'asdf'
+    right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                      source_right=copyright)
+
+    # Reset mock for later users
+    mock_plugin.save.reset_mock()
+    mock_plugin.save.return_value = None
+    return right

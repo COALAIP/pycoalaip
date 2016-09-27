@@ -241,7 +241,7 @@ def test_register_manifestation_with_existing_work_raises_on_non_work(
         )
 
 
-def test_register_manifestation_with_existing_work_raises_on_unpersisted_work(
+def test_register_manifestation_with_existing_work_raises_on_not_persisted_work(
         mock_coalaip, alice_user, manifestation_data, work_entity):
     from coalaip.exceptions import EntityNotYetPersistedError
     # Remove the 'manifestationOfWork' key to use the existing_work
@@ -365,6 +365,32 @@ def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
                                              user=alice_user)
 
 
+def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
+                                             right_data, alice_user,
+                                             mock_right_create_id):
+    from coalaip.entities import Right
+    from coalaip.models import _model_factory
+    mock_plugin.save.return_value = mock_right_create_id
+
+    custom_right_type = 'CustomRight'
+
+    class CustomRight(Right):
+        @classmethod
+        def generate_model(cls, *args, **kwargs):
+            return _model_factory(ld_type=custom_right_type, *args, **kwargs)
+
+    # Test the new Right is created with the given source_right
+    custom_right = mock_coalaip.derive_right(
+        right_data,
+        current_holder=alice_user,
+        right_entity_cls=CustomRight
+    )
+    assert isinstance(custom_right, CustomRight)
+    assert custom_right.to_json()['type'] == custom_right_type
+    assert custom_right.persist_id == mock_right_create_id
+    assert custom_right.data['allowedBy'] == right_data['allowedBy']
+
+
 def test_derive_right_with_existing_source_right_raises_on_non_right(
         mock_coalaip, alice_user, right_data):
     # Remove the 'allowedBy' key to use the source_right
@@ -374,7 +400,7 @@ def test_derive_right_with_existing_source_right_raises_on_non_right(
                                   source_right={})
 
 
-def test_derive_right_with_existing_source_right_raises_on_unpersisted_right(
+def test_derive_right_with_existing_source_right_raises_on_not_persisted_right(
         mock_coalaip, alice_user, right_data, copyright_entity):
     from coalaip.exceptions import EntityNotYetPersistedError
 
@@ -407,32 +433,6 @@ def test_derive_right_with_existing_source_right_raises_on_incompatible_plugin(
                                   source_right=source_right_from_diff_plugin)
 
 
-def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
-                                             right_data, alice_user,
-                                             mock_right_create_id):
-    from coalaip.entities import Right
-    from coalaip.models import _model_factory
-    mock_plugin.save.return_value = mock_right_create_id
-
-    custom_right_type = 'CustomRight'
-
-    class CustomRight(Right):
-        @classmethod
-        def generate_model(cls, *args, **kwargs):
-            return _model_factory(ld_type=custom_right_type, *args, **kwargs)
-
-    # Test the new Right is created with the given source_right
-    custom_right = mock_coalaip.derive_right(
-        right_data,
-        current_holder=alice_user,
-        right_entity_cls=CustomRight
-    )
-    assert isinstance(custom_right, CustomRight)
-    assert custom_right.to_json()['type'] == custom_right_type
-    assert custom_right.persist_id == mock_right_create_id
-    assert custom_right.data['allowedBy'] == right_data['allowedBy']
-
-
 def test_derive_right_raises_on_no_allowed_by_or_source_right(
         mock_plugin, mock_coalaip, right_data, alice_user):
     del right_data['allowedBy']
@@ -449,3 +449,110 @@ def test_derive_right_raises_on_creation_error(mock_plugin, mock_coalaip,
 
     with raises(EntityCreationError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user)
+
+
+@mark.parametrize('use_data_format_enum', [True, False])
+@mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
+def test_transfer_right(mock_plugin, mock_coalaip, alice_user, bob_user,
+                        data_format, use_data_format_enum,
+                        rights_assignment_data, persisted_jsonld_derived_right,
+                        mock_rights_assignment_transfer_id):
+    mock_plugin.transfer.return_value = mock_rights_assignment_transfer_id
+
+    transfer_right_kwargs = {}
+    if data_format:
+        if use_data_format_enum:
+            from tests.utils import get_data_format_enum_member
+            data_format_arg = get_data_format_enum_member(data_format)
+        else:
+            data_format_arg = data_format
+        transfer_right_kwargs['rights_assignment_format'] = data_format_arg
+
+    # Transfer the Right and test the resulting RightsAssignment is correct
+    rights_assignment = mock_coalaip.transfer_right(
+        persisted_jsonld_derived_right, rights_assignment_data,
+        current_holder=alice_user, to=bob_user, **transfer_right_kwargs)
+    assert rights_assignment.persist_id == mock_rights_assignment_transfer_id
+    assert rights_assignment.data == rights_assignment_data
+
+    # Test the correct data format was used in the transfer
+    if data_format == 'json':
+        rights_assignment_persisted_data = rights_assignment.to_json()
+    elif data_format == 'ipld':
+        raise NotImplementedError('IPLD is not implemented yet')
+    else:
+        rights_assignment_persisted_data = rights_assignment.to_jsonld()
+
+    # Check we called plugin.transfer() with the right format
+    mock_plugin.transfer.assert_called_once_with(
+            persisted_jsonld_derived_right.persist_id,
+            rights_assignment_persisted_data,
+            from_user=alice_user,
+            to_user=bob_user)
+
+
+def test_transfer_right_without_rights_assignment_data(
+        mock_plugin, mock_coalaip, alice_user, bob_user,
+        persisted_jsonld_derived_right, mock_rights_assignment_transfer_id):
+    mock_plugin.transfer.return_value = mock_rights_assignment_transfer_id
+
+    # Transfer the Right and test the resulting RightsAssignment is correct
+    rights_assignment = mock_coalaip.transfer_right(
+        persisted_jsonld_derived_right,
+        current_holder=alice_user,
+        to=bob_user,
+        rights_assignment_format='json')
+    assert rights_assignment.persist_id == mock_rights_assignment_transfer_id
+    assert rights_assignment.data == {}
+
+    # Check we called plugin.transfer() with the right format
+    mock_plugin.transfer.assert_called_once_with(
+            persisted_jsonld_derived_right.persist_id,
+            {'type': 'RightsTransferAction'},
+            from_user=alice_user,
+            to_user=bob_user)
+
+
+def test_transfer_right_raises_on_non_right(mock_coalaip, alice_user, bob_user,
+                                            persisted_jsonld_registration):
+    with raises(TypeError):
+        mock_coalaip.transfer_right(persisted_jsonld_registration.work,
+                                    current_holder=alice_user, to=bob_user)
+
+
+def test_transfer_right_raises_on_not_persisted_right(mock_coalaip, alice_user,
+                                                      bob_user, right_entity):
+    from coalaip.exceptions import EntityNotYetPersistedError
+    with raises(EntityNotYetPersistedError):
+        mock_coalaip.transfer_right(right_entity, current_holder=alice_user,
+                                    to=bob_user)
+
+
+def test_transfer_right_raises_on_incompatible_plugin(
+        mock_coalaip, mock_plugin, alice_user, bob_user, right_data,
+        mock_right_create_id):
+    from coalaip.entities import Right
+    from coalaip.exceptions import IncompatiblePluginError
+    from tests.utils import create_mock_plugin
+    diff_plugin = create_mock_plugin()
+    right_from_diff_plugin = Right.from_data(right_data, plugin=diff_plugin)
+
+    # Save the right
+    mock_plugin.save.return_value = mock_right_create_id
+    right_from_diff_plugin.create(user=alice_user)
+
+    with raises(IncompatiblePluginError):
+        mock_coalaip.transfer_right(right_from_diff_plugin,
+                                    current_holder=alice_user, to=bob_user)
+
+
+def test_transfer_right_raises_on_transfer_error(
+        mock_plugin, mock_coalaip, alice_user, bob_user,
+        persisted_jsonld_derived_right, mock_transfer_error):
+    from coalaip.exceptions import EntityTransferError
+
+    mock_plugin.transfer.side_effect = mock_transfer_error
+
+    with raises(EntityTransferError):
+        mock_coalaip.transfer_right(persisted_jsonld_derived_right,
+                                    current_holder=alice_user, to=bob_user)
