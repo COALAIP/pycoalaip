@@ -255,6 +255,31 @@ def test_register_manifestation_with_existing_work_raises_on_unpersisted_work(
         )
 
 
+def test_register_manifestation_with_existing_work_raises_on_incompatible_plugin(
+        mock_coalaip, mock_plugin, alice_user, manifestation_data, work_data,
+        mock_work_create_id):
+    from coalaip.entities import Work
+    from coalaip.exceptions import IncompatiblePluginError
+    from tests.utils import create_mock_plugin
+    diff_plugin = create_mock_plugin()
+    existing_work_from_diff_plugin = Work.from_data(work_data,
+                                                    plugin=diff_plugin)
+
+    # Save the existing_work
+    mock_plugin.save.return_value = mock_work_create_id
+    existing_work_from_diff_plugin.create(user=alice_user)
+
+    # Remove the 'manifestationOfWork' key to use the existing_work
+    del manifestation_data['manifestationOfWork']
+
+    with raises(IncompatiblePluginError):
+        mock_coalaip.register_manifestation(
+            manifestation_data,
+            copyright_holder=alice_user,
+            existing_work=existing_work_from_diff_plugin,
+        )
+
+
 def test_register_manifestation_raises_on_creation_error(
         mock_plugin, mock_coalaip, manifestation_data, alice_user):
     from coalaip.exceptions import EntityCreationError
@@ -358,6 +383,28 @@ def test_derive_right_with_existing_source_right_raises_on_unpersisted_right(
     with raises(EntityNotYetPersistedError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                   source_right=copyright_entity)
+
+
+def test_derive_right_with_existing_source_right_raises_on_incompatible_plugin(
+        mock_coalaip, mock_plugin, alice_user, copyright_data, right_data,
+        mock_copyright_create_id):
+    from coalaip.entities import Copyright
+    from coalaip.exceptions import IncompatiblePluginError
+    from tests.utils import create_mock_plugin
+    diff_plugin = create_mock_plugin()
+    source_right_from_diff_plugin = Copyright.from_data(copyright_data,
+                                                        plugin=diff_plugin)
+
+    # Save the source_right
+    mock_plugin.save.return_value = mock_copyright_create_id
+    source_right_from_diff_plugin.create(user=alice_user)
+
+    # Remove the 'allowedBy' key to use the existing_work
+    del right_data['allowedBy']
+
+    with raises(IncompatiblePluginError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user,
+                                  source_right=source_right_from_diff_plugin)
 
 
 def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
