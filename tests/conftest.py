@@ -324,14 +324,14 @@ def mock_right_create_id():
 
 
 @fixture
-def transfer_contract_url():
-    return 'https://ipdb.s3.amazonaws.com/1234567890.pdf'
+def mock_transfer_contract_url():
+    return 'https://ipdb.s3.amazonaws.com/mock_transfer_contract.pdf'
 
 
 @fixture
-def rights_assignment_data(transfer_contract_url):
+def rights_assignment_data(mock_transfer_contract_url):
     return {
-        'transferContract': transfer_contract_url
+        'transferContract': mock_transfer_contract_url
     }
 
 
