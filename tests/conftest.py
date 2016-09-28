@@ -260,10 +260,11 @@ def mock_copyright_create_id():
 
 
 @fixture
-def right_data_factory(mock_copyright_create_id):
+def right_data_factory(mock_license_url, mock_copyright_create_id):
     def factory(*, allowedBy=mock_copyright_create_id, data=None):
         right_data = {
-            'allowedBy': allowedBy
+            'allowedBy': allowedBy,
+            'license': mock_license_url
         }
         return extend_dict(right_data, data)
     return factory
@@ -324,14 +325,19 @@ def mock_right_create_id():
 
 
 @fixture
-def transfer_contract_url():
-    return 'https://ipdb.s3.amazonaws.com/1234567890.pdf'
+def mock_license_url():
+    return 'https://ipdb.s3.amazonaws.com/mock_license.pdf'
 
 
 @fixture
-def rights_assignment_data(transfer_contract_url):
+def mock_transfer_contract_url():
+    return 'https://ipdb.s3.amazonaws.com/mock_transfer_contract.pdf'
+
+
+@fixture
+def rights_assignment_data(mock_transfer_contract_url):
     return {
-        'transferContract': transfer_contract_url
+        'transferContract': mock_transfer_contract_url
     }
 
 

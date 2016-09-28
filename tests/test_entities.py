@@ -534,6 +534,19 @@ def test_right_init_raises_without_str_allowed_by(mock_plugin, right_data):
         Right.from_data(right_data, plugin=mock_plugin)
 
 
+def test_right_init_raises_without_str_license(mock_plugin, right_data):
+    from coalaip.entities import Right
+    from coalaip.exceptions import ModelDataError
+
+    del right_data['license']
+    with raises(ModelDataError):
+        Right.from_data(right_data, plugin=mock_plugin)
+
+    right_data['license'] = {}
+    with raises(ModelDataError):
+        Right.from_data(right_data, plugin=mock_plugin)
+
+
 def test_copyright_init_raises_without_str_rights_of(mock_plugin,
                                                      copyright_data):
     from coalaip.entities import Copyright
@@ -559,15 +572,16 @@ def test_copyright_init_raises_if_derived(mock_plugin, right_data,
         Copyright.from_data(copyright_data, plugin=mock_plugin)
 
 
-def test_right_init_raises_with_both_rights_of_allowed_by(
-        mock_plugin, right_data_factory, mock_manifestation_create_id):
-    from coalaip.entities import Right
+@mark.parametrize('entity_cls_name', ['Right', 'Copyright'])
+def test_right_init_raises_if_both_copyright_and_right(
+        mock_plugin, entity_cls_name, copyright_data, right_data):
     from coalaip.exceptions import ModelDataError
+    from coalaip.utils import extend_dict
+    entity_cls = get_entity_cls(entity_cls_name)
 
-    right_data = right_data_factory(
-        data={'rightsOf': mock_manifestation_create_id})
+    data = extend_dict(right_data, copyright_data)
     with raises(ModelDataError):
-        Right.from_data(right_data, plugin=mock_plugin)
+        entity_cls.from_data(data, plugin=mock_plugin)
 
 
 @mark.parametrize('right_entity_name,mock_create_id_name', [
