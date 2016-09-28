@@ -373,14 +373,14 @@ class TransferrableEntity(Entity):
                 persistence layer
 
         Returns:
-            str: the id of the resulting transfer action on the
-            persistence layer
+            str: Id of the resulting transfer action on the persistence
+            layer
 
         Raises:
             :exc:`~.EntityNotYetPersistedError`: If the entity being
                 transferred is not associated with an id on the
                 persistence layer (:attr:`~Entity.persist_id`) yet
-            :exc:`~.EntityTransferError`: if the entity fails to be
+            :exc:`~.EntityTransferError`: If the entity fails to be
                 transferred on the persistence layer
         """
 
@@ -473,7 +473,7 @@ class Right(TransferrableEntity):
                     - 'ipld'
 
         Returns:
-            :class:`~.RightsAssignment`: the RightsAssignment entity
+            :class:`~.RightsAssignment`: The RightsAssignment entity
             created from this transfer
 
         Raises:

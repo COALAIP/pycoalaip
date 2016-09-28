@@ -4,14 +4,14 @@ from coalaip.exceptions import ModelDataError
 
 
 def is_callable(instance, attribute, value):
-    """Raises a :exc:`TypeError` if the value is not a callable"""
+    """Raises a :exc:`TypeError` if the value is not a callable."""
 
     if not callable(value):
         raise TypeError("'{}' must be callable".format(attribute.name))
 
 
 def use_model_attr(attr):
-    """Use the validator set on a separate attribute on the class"""
+    """Use the validator set on a separate attribute on the class."""
 
     def use_model_validator(instance, attribute, value):
         getattr(instance, attr)(instance, attribute, value)
@@ -19,7 +19,7 @@ def use_model_attr(attr):
 
 
 def does_not_contain(*avoid_keys, error_cls=ValueError):
-    """Decorator: value must not contain any of the :attr:`avoid_keys`
+    """Decorator: value must not contain any of the :attr:`avoid_keys`.
     """
 
     def decorator(func):
@@ -111,7 +111,7 @@ def is_right_model(instance, attribute, value):
     """Must include at least the ``allowedBy`` and ``license`` keys, but
     not a ``rightsOf`` key (``allowedBy`` indicates that the Right is
     derived from and allowed by a source Right; it cannot contain the
-    full rights to a Creation)
+    full rights to a Creation).
     """
 
     for key in ['allowedBy', 'license']:
@@ -130,7 +130,7 @@ def is_right_model(instance, attribute, value):
 def is_copyright_model(instance, attribute, value):
     """Must include at least a ``rightsOf`` key, but not a ``allowedBy``
     key (``rightsOf`` indicates that the Right contains full rights to
-    an existing Manifestation or Work; i.e. is a Copyright)
+    an existing Manifestation or Work; i.e. is a Copyright).
     """
 
     rights_of = value.get('rightsOf')

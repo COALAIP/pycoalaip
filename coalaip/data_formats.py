@@ -15,7 +15,7 @@ class DataFormat(Enum):
 
 
 def _copy_context_into_mutable(context):
-    """Copy a properly formatted context into a mutable data structure
+    """Copy a properly formatted context into a mutable data structure.
     """
     def make_mutable(val):
         if isinstance(val, Mapping):
@@ -58,14 +58,14 @@ def _data_format_resolver(data_format, resolver_dict):
     :attr:`data_format`.
 
     Args:
-        data_format (:class:`~.DataFormat` or str): the data format;
+        data_format (:class:`~.DataFormat` or str): The data format;
             must be a member of :class:`~.DataFormat` or a string
             equivalent.
         resolver_dict (dict): the resolving dict. Can hold any value
             for any of the valid :attr:`data_format` strings
 
     Returns:
-        the value of the key in :attr:`resolver_dict` that matches
+        The value of the key in :attr:`resolver_dict` that matches
         :attr:`data_format`
     """
     try:
