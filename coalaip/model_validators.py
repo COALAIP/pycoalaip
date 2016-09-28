@@ -18,7 +18,7 @@ def use_model_attr(attr):
     return use_model_validator
 
 
-def does_not_contain(*avoid_keys):
+def does_not_contain(*avoid_keys, error_cls=ValueError):
     """Decorator: value must not contain any of the :attr:`avoid_keys`
     """
 
@@ -35,7 +35,7 @@ def does_not_contain(*avoid_keys):
                                              avoid_keys=avoid_keys_str,
                                              attr=attribute.name,
                                              cls=instance_name)
-                raise ModelDataError(err_str)
+                raise error_cls(err_str)
 
             return func(instance, attribute, value)
         return not_contains
@@ -106,7 +106,7 @@ def is_manifestation_model(instance, attribute, value):
         raise ModelDataError(err_str)
 
 
-@does_not_contain('rightsOf')
+@does_not_contain('rightsOf', error_cls=ModelDataError)
 def is_right_model(instance, attribute, value):
     """Must include at least the ``allowedBy`` and ``license`` keys, but
     not a ``rightsOf`` key (``allowedBy`` indicates that the Right is
@@ -126,7 +126,7 @@ def is_right_model(instance, attribute, value):
                                                       value=key_value))
 
 
-@does_not_contain('allowedBy')
+@does_not_contain('allowedBy', error_cls=ModelDataError)
 def is_copyright_model(instance, attribute, value):
     """Must include at least a ``rightsOf`` key, but not a ``allowedBy``
     key (``rightsOf`` indicates that the Right contains full rights to
