@@ -1,8 +1,9 @@
 """Utilities for data formats supported by pycoalaip."""
 
-from collections import namedtuple
+from collections import namedtuple, Mapping
 from copy import copy
 from enum import Enum, unique
+from types import MappingProxyType
 
 
 @unique
@@ -11,6 +12,45 @@ class DataFormat(Enum):
     json = 'json'
     jsonld = 'jsonld'
     ipld = 'ipld'
+
+
+def _copy_context_into_mutable(context):
+    """Copy a properly formatted context into a mutable data structure
+    """
+    def make_mutable(val):
+        if isinstance(val, Mapping):
+            return dict(val)
+        else:
+            return val
+
+    if not isinstance(context, (str, Mapping)):
+        try:
+            return [make_mutable(val) for val in context]
+        except TypeError:
+            pass
+    return make_mutable(context)
+
+
+def _make_context_immutable(context):
+    """Best effort attempt at turning a properly formatted context
+    (either a string, dict, or array of strings and dicts) into an
+    immutable data structure.
+
+    If we get an array, make it immutable by creating a tuple; if we get
+    a dict, copy it into a MappingProxyType. Otherwise, return as-is.
+    """
+    def make_immutable(val):
+        if isinstance(val, Mapping):
+            return MappingProxyType(val)
+        else:
+            return val
+
+    if not isinstance(context, (str, Mapping)):
+        try:
+            return tuple([make_immutable(val) for val in context])
+        except TypeError:
+            pass
+    return make_immutable(context)
 
 
 def _data_format_resolver(data_format, resolver_dict):

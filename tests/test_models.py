@@ -14,10 +14,12 @@ def model_type():
 
 
 def test_model_init(model_data, model_type):
-    from attr import validators
     from coalaip.models import Model
     ld_context = 'ld_context'
-    validator = validators.instance_of(dict)
+
+    def validator(instance, attribute, value):
+        if not value.get('data'):
+            raise ValueError()
 
     model = Model(data=model_data, ld_type=model_type, ld_context=ld_context,
                   validator=validator)
@@ -32,7 +34,7 @@ def test_model_init_defaults(context_urls_all, model_data, model_type):
     model = Model(data=model_data, ld_type=model_type)
     assert model.data == model_data
     assert model.ld_type == model_type
-    assert model.ld_context == context_urls_all
+    assert set(model.ld_context) == set(context_urls_all)
     assert callable(model.validator)
 
 
@@ -49,6 +51,35 @@ def test_model_immutable(model_data, model_type):
         model.ld_context = 'other_context'
     with raises(FrozenInstanceError):
         model.validator = validators.instance_of(str)
+
+
+def test_model_data_immutable(model_data, model_type):
+    from coalaip.models import Model
+    model = Model(data=model_data, ld_type=model_type)
+    with raises(TypeError):
+        model.data['new_data'] = 'new_data'
+    assert model.data == model_data
+
+
+@mark.parametrize('ld_context', [
+    'context',
+    ['array', 'for', 'context'],
+    {'a': 'dict', 'for': 'context'},
+    [{'mixed': 'array'}, 'for', 'context'],
+])
+def test_model_ld_context_immutable(model_data, model_type, ld_context):
+    from collections import Mapping
+    from coalaip.models import Model
+    model = Model(data=model_data, ld_type=model_type, ld_context=ld_context)
+    if isinstance(ld_context, str):
+        with raises(TypeError):
+            model.ld_context[0] = 'a'
+    elif isinstance(ld_context, Mapping):
+        with raises(TypeError):
+            model.ld_context['new_key'] = 'new_data'
+    else:
+        with raises(TypeError):
+            model.ld_context[0] = 'new_context'
 
 
 def test_lazy_model_init(model_type):
@@ -70,7 +101,7 @@ def test_lazy_model_init_defaults(context_urls_all, model_type):
     model = LazyLoadableModel(ld_type=model_type)
     assert model.loaded_model is None
     assert model.ld_type == model_type
-    assert model.ld_context == context_urls_all
+    assert set(model.ld_context) == set(context_urls_all)
     assert callable(model.validator)
 
 
@@ -113,9 +144,29 @@ def test_lazy_model_immutable(model_data, model_type):
         model.validator = validators.instance_of(str)
 
 
+@mark.parametrize('ld_context', [
+    'context',
+    ['array', 'for', 'context'],
+    {'a': 'dict', 'for': 'context'},
+    [{'mixed': 'array'}, 'for', 'context'],
+])
+def test_lazy_model_ld_context_immutable(model_type, ld_context):
+    from collections import Mapping
+    from coalaip.models import LazyLoadableModel
+    model = LazyLoadableModel(ld_type=model_type, ld_context=ld_context)
+    if isinstance(ld_context, str):
+        with raises(TypeError):
+            model.ld_context[0] = 'a'
+    elif isinstance(ld_context, Mapping):
+        with raises(TypeError):
+            model.ld_context['new_key'] = 'new_data'
+    else:
+        with raises(TypeError):
+            model.ld_context[0] = 'new_context'
+
+
 def test_lazy_model_load(mock_plugin, model_data, model_type,
                          mock_entity_create_id):
-    from attr.exceptions import FrozenInstanceError
     from coalaip.models import Model, LazyLoadableModel
     mock_plugin.load.return_value = model_data
 
@@ -129,13 +180,37 @@ def test_lazy_model_load(mock_plugin, model_data, model_type,
     assert model.loaded_model.ld_context == model.ld_context
     assert model.loaded_model.validator == model.validator
 
-    with raises(FrozenInstanceError):
-        model.loaded_model = Model(data={'other': 'other'}, ld_type='other_type')
-
     # If initialized with data, load() becomes a noop
     mock_plugin.reset_mock()
     model.load(mock_entity_create_id, plugin=mock_plugin)
     mock_plugin.load.assert_not_called()
+
+
+def test_lazy_model_immutable_after_load(mock_plugin, model_data, model_type,
+                                         mock_entity_create_id):
+    from attr.exceptions import FrozenInstanceError
+    from coalaip.models import Model, LazyLoadableModel
+    mock_plugin.load.return_value = model_data
+
+    model = LazyLoadableModel(ld_type=model_type)
+    model.load(mock_entity_create_id, plugin=mock_plugin)
+
+    with raises(FrozenInstanceError):
+        model.loaded_model = Model(data={'other': 'other'}, ld_type='other_type')
+
+
+def test_lazy_model_data_immutable_after_load(mock_plugin, model_data,
+                                              model_type,
+                                              mock_entity_create_id):
+    from coalaip.models import LazyLoadableModel
+    mock_plugin.load.return_value = model_data
+
+    model = LazyLoadableModel(ld_type=model_type)
+    model.load(mock_entity_create_id, plugin=mock_plugin)
+
+    with raises(TypeError):
+        model.data['new_data'] = 'new_data'
+    assert model.data == model_data
 
 
 @mark.parametrize('bad_type_data', [
@@ -196,6 +271,7 @@ def test_lazy_model_load_raises_on_model_validation(mock_plugin, work_jsonld,
 def test_model_factories(model_factory_name, data_name, jsonld_name,
                          model_cls_name, request):
     import importlib
+    from collections import Mapping
     from tests.utils import assert_key_values_present_in_dict
 
     models = importlib.import_module('coalaip.models')
@@ -208,4 +284,9 @@ def test_model_factories(model_factory_name, data_name, jsonld_name,
     model = model_factory(data=data, model_cls=model_cls)
     assert_key_values_present_in_dict(model.data, **data)
     assert model.ld_type == jsonld['@type']
-    assert model.ld_context == jsonld['@context']
+    if isinstance(model.ld_context, str):
+        assert model.ld_context == jsonld['@context']
+    elif isinstance(model.ld_context, Mapping):
+        assert dict(model.ld_context) == dict(jsonld['@context'])
+    else:
+        assert set(model.ld_context) == set(jsonld['@context'])

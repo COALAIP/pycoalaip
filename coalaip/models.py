@@ -4,17 +4,23 @@ Encapsulates the data modelling of COALA IP entities. Supports
 model validation and the loading of data from a backing persistence
 layer.
 
-**Note:** this module should not be used directly to generate models,
+.. note:: This module should not be used directly to generate models,
 unless you are extending the built-ins for your own extensions. Instead,
 use the models that are contained in the entities (:mod:`.entities`)
 returned from the high-level functions (:mod:`.coalaip`).
+
+..warning:: The immutability guarantees given in this module are
+best-effort. There is no general way to achieve immutability in Python,
+but we try our hardest to make it so.
 """
 
 import attr
 import coalaip.model_validators as validators
 
+from copy import copy
+from types import MappingProxyType
 from coalaip import context_urls
-from coalaip.data_formats import _extract_ld_data
+from coalaip.data_formats import _extract_ld_data, _make_context_immutable
 from coalaip.exceptions import (
     ModelError,
     ModelDataError,
@@ -27,20 +33,23 @@ def get_default_ld_context():
     return [context_urls.COALAIP, context_urls.SCHEMA]
 
 
+DEFAULT_DATA_VALIDATOR = attr.validators.instance_of(MappingProxyType)
+
+
 @attr.s(frozen=True, repr=False)
 class Model:
     """Basic data model class for COALA IP entities. Includes Linked
     Data (JSON-LD) specifics.
 
-    **Immutable (see :class:`.PostInitImmutable`)**.
+    **Immutable (see :class:`.PostInitImmutable` and attributes)**.
 
     Initialization may throw if attribute validation fails.
 
     Attributes:
         data (dict): Model data. Uses :attr:`validator` for validation.
         ld_type (str): @type of the entity
-        ld_context (str or [str|dict], keyword): "@context" for the entity
-            as either a string URL or array of string URLs or
+        ld_context (str or dict or [str|dict], keyword): "@context" for
+            the entity as either a string URL or array of string URLs or
             dictionaries. See the `JSON-LD spec on contexts
             <https://www.w3.org/TR/json-ld/#the-context>`_ for more
             information.
@@ -48,10 +57,12 @@ class Model:
             `validator API <https://attrs.readthedocs.io/en/stable/examples.html#validators>`_
             that will validate :attr:`data`
     """
-    data = attr.ib(validator=validators.use_model_attr('validator'))
+    data = attr.ib(convert=lambda data: MappingProxyType(copy(data)),
+                   validator=validators.use_model_attr('validator'))
     ld_type = attr.ib(validator=attr.validators.instance_of(str))
-    ld_context = attr.ib(default=attr.Factory(get_default_ld_context))
-    validator = attr.ib(default=attr.validators.instance_of(dict),
+    ld_context = attr.ib(default=attr.Factory(get_default_ld_context),
+                         convert=_make_context_immutable)
+    validator = attr.ib(default=DEFAULT_DATA_VALIDATOR,
                         validator=validators.is_callable)
 
     def __repr__(self):
@@ -67,7 +78,7 @@ class Model:
 class LazyLoadableModel(PostInitImmutable):
     """Lazy loadable data model class for COALA IP entities.
 
-    **Immutable (see :class:`.PostInitImmutable`)**.
+    **Immutable (see :class:`.PostInitImmutable` and attributes)**.
 
     Similar to :class:`~.Model`, except it allows the model data to be
     lazily loaded afterwards from a backing persistence layer through a
@@ -84,13 +95,14 @@ class LazyLoadableModel(PostInitImmutable):
         validator: See :attr:`~.Model.validator`
     """
 
+    # See __init__() for defaults
     ld_type = attr.ib(validator=attr.validators.instance_of(str))
     ld_context = attr.ib()
     validator = attr.ib(validator=validators.is_callable)
     loaded_model = attr.ib(init=False)
 
     def __init__(self, ld_type, ld_context=None,
-                 validator=attr.validators.instance_of(dict), data=None):
+                 validator=DEFAULT_DATA_VALIDATOR, data=None):
         """Initialize a :class:`~.LazyLoadableModel` instance.
 
         If a :attr:`data` is provided, a :class:`Model` is generated
@@ -99,7 +111,8 @@ class LazyLoadableModel(PostInitImmutable):
         """
 
         self.ld_type = ld_type
-        self.ld_context = ld_context or get_default_ld_context()
+        self.ld_context = _make_context_immutable(ld_context or
+                                                  get_default_ld_context())
         self.validator = validator
         self.loaded_model = None
 

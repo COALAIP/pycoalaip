@@ -4,18 +4,22 @@ Requires usage with a persistence layer plugin (see
 :class:`~.AbstractPlugin`) for the creation and transfer of entities.
 JSON, JSON-LD, and IPLD data formats are supported.
 
-**Note:** this module should not be used directly to generate entities,
+.. note:: This module should not be used directly to generate entities,
 unless you are extending the built-ins for your own extensions. Instead,
 use the high-level functions (:mod:`.coalaip`) that return instances of
 these entities.
+
+..warning:: The immutability guarantees given in this module are
+best-effort. There is no general way to achieve immutability in Python,
+but we try our hardest to make it so.
 """
 
 import attr
 
 from abc import ABC, abstractmethod
-from copy import copy
 from coalaip.data_formats import (
     DataFormat,
+    _copy_context_into_mutable,
     _data_format_resolver,
     _extract_ld_data,
 )
@@ -77,7 +81,7 @@ class Entity(ABC, PostInitImmutable):
         ) if self.persist_id is not None else ''
 
         try:
-            data_str = self.model.data
+            data_str = dict(self.model.data)
         except ModelNotYetLoadedError:
             data_str = 'Not loaded'
 
@@ -87,8 +91,8 @@ class Entity(ABC, PostInitImmutable):
 
     @property
     def data(self):
-        """dict: The basic data held by this entity model. Does not
-        include any JSON-LD or IPLD specific information.
+        """dict: A copy of the basic data held by this entity model.
+        Does not include any JSON-LD or IPLD specific information.
 
         If the entity was generated through :meth:`from_persist_id`, the
         first access of this property may also load the entity's data
@@ -97,10 +101,11 @@ class Entity(ABC, PostInitImmutable):
         """
 
         try:
-            return self.model.data
+            data = self.model.data
         except ModelNotYetLoadedError:
             self.load()
-            return self.model.data
+            data = self.model.data
+        return dict(data)
 
     @property
     def status(self):
@@ -127,9 +132,9 @@ class Entity(ABC, PostInitImmutable):
         Args:
             data (dict, keyword): Model data
             ld_type (str, keyword): @type of the entity.
-            ld_context (str or [str|dict], keyword): "@context" for the
-                entity as either a string URL or array of string URLs
-                or dictionaries. See the `JSON-LD spec on contexts
+            ld_context (str or dict or [str|dict], keyword): "@context"
+                for the entity as either a string URL or array of string
+                URLs or dictionaries. See the `JSON-LD spec on contexts
                 <https://www.w3.org/TR/json-ld/#the-context>`_ for more
                 information.
             model_cls (class, keyword): Model class to use the
@@ -313,7 +318,7 @@ class Entity(ABC, PostInitImmutable):
         ignored.
         """
 
-        json_model = copy(self.data)
+        json_model = self.data
         json_model['type'] = self.model.ld_type
         return json_model
 
@@ -324,8 +329,8 @@ class Entity(ABC, PostInitImmutable):
         the current :attr:`~.Entity.persist_id` document.
         """
 
-        ld_model = copy(self.data)
-        ld_model['@context'] = self.model.ld_context
+        ld_model = self.data
+        ld_model['@context'] = _copy_context_into_mutable(self.model.ld_context)
         ld_model['@type'] = self.model.ld_type
         ld_model['@id'] = ''  # Specifying an empty @id resolves to the current document
         return ld_model
