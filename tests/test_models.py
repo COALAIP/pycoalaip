@@ -14,10 +14,12 @@ def model_type():
 
 
 def test_model_init(model_data, model_type):
-    from attr import validators
     from coalaip.models import Model
     ld_context = 'ld_context'
-    validator = validators.instance_of(dict)
+
+    def validator(instance, attribute, value):
+        if not value.get('data'):
+            raise ValueError()
 
     model = Model(data=model_data, ld_type=model_type, ld_context=ld_context,
                   validator=validator)
@@ -32,7 +34,7 @@ def test_model_init_defaults(context_urls_all, model_data, model_type):
     model = Model(data=model_data, ld_type=model_type)
     assert model.data == model_data
     assert model.ld_type == model_type
-    assert model.ld_context == context_urls_all
+    assert set(model.ld_context) == set(context_urls_all)
     assert callable(model.validator)
 
 
@@ -70,7 +72,7 @@ def test_lazy_model_init_defaults(context_urls_all, model_type):
     model = LazyLoadableModel(ld_type=model_type)
     assert model.loaded_model is None
     assert model.ld_type == model_type
-    assert model.ld_context == context_urls_all
+    assert set(model.ld_context) == set(context_urls_all)
     assert callable(model.validator)
 
 
@@ -196,6 +198,7 @@ def test_lazy_model_load_raises_on_model_validation(mock_plugin, work_jsonld,
 def test_model_factories(model_factory_name, data_name, jsonld_name,
                          model_cls_name, request):
     import importlib
+    from collections import Mapping
     from tests.utils import assert_key_values_present_in_dict
 
     models = importlib.import_module('coalaip.models')
@@ -208,4 +211,9 @@ def test_model_factories(model_factory_name, data_name, jsonld_name,
     model = model_factory(data=data, model_cls=model_cls)
     assert_key_values_present_in_dict(model.data, **data)
     assert model.ld_type == jsonld['@type']
-    assert model.ld_context == jsonld['@context']
+    if isinstance(model.ld_context, str):
+        assert model.ld_context == jsonld['@context']
+    elif isinstance(model.ld_context, Mapping):
+        assert dict(model.ld_context) == dict(jsonld['@context'])
+    else:
+        assert set(model.ld_context) == set(jsonld['@context'])
