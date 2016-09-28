@@ -18,6 +18,30 @@ def use_model_attr(attr):
     return use_model_validator
 
 
+def does_not_contain(*avoid_keys):
+    """Decorator: value must not contain any of the :attr:`avoid_keys`
+    """
+
+    def decorator(func):
+        def not_contains(instance, attribute, value):
+            instance_name = instance.__class__.__name__
+
+            num_matched_keys = len(set(avoid_keys) & value.keys())
+            if num_matched_keys > 0:
+                avoid_keys_str = ', '.join(avoid_keys)
+                err_str = ("Given keys ({num_matched} of {{avoid_keys}} "
+                           "that must not be given in the '{attr}' of a "
+                           "'{cls}'").format(num_matched=num_matched_keys,
+                                             avoid_keys=avoid_keys_str,
+                                             attr=attribute.name,
+                                             cls=instance_name)
+                raise ModelDataError(err_str)
+
+            return func(instance, attribute, value)
+        return not_contains
+    return decorator
+
+
 def is_creation_model(instance, attribute, value):
     """Must include at least a ``name`` key."""
 
@@ -82,45 +106,38 @@ def is_manifestation_model(instance, attribute, value):
         raise ModelDataError(err_str)
 
 
+@does_not_contain('rightsOf')
 def is_right_model(instance, attribute, value):
-    """Must include either a ``rightsOf`` or ``allowedBy`` key (but not
-    both):
-
-        - ``rightsOf`` indicates that the Right contains full rights to
-            an existing Manifestation or Work
-        - ``allowedBy`` indicates that the Right is derived from and
-            allowed by a source Right.
+    """Must include at least the ``allowedBy`` and ``license`` keys, but
+    not a ``rightsOf`` key (``allowedBy`` indicates that the Right is
+    derived from and allowed by a source Right; it cannot contain the
+    full rights to a Creation)
     """
 
-    instance_name = instance.__class__.__name__
+    for key in ['allowedBy', 'license']:
+        key_value = value.get(key)
+        if not isinstance(key_value, str):
+            instance_name = instance.__class__.__name__
+            raise ModelDataError(("'{key}' must be given as a string in "
+                                  "the '{attr}' parameter of a '{cls}'. Given "
+                                  "'{value}'").format(key=key,
+                                                      attr=attribute.name,
+                                                      cls=instance_name,
+                                                      value=key_value))
+
+
+@does_not_contain('allowedBy')
+def is_copyright_model(instance, attribute, value):
+    """Must include at least a ``rightsOf`` key, but not a ``allowedBy``
+    key (``rightsOf`` indicates that the Right contains full rights to
+    an existing Manifestation or Work; i.e. is a Copyright)
+    """
+
     rights_of = value.get('rightsOf')
-    allowed_by = value.get('allowedBy')
-    if rights_of is not None and not isinstance(rights_of, str):
+    if not isinstance(rights_of, str):
+        instance_name = instance.__class__.__name__
         raise ModelDataError(("'rightsOf' must be given as a string in "
                               "the '{attr}' parameter of a '{cls}'. Given "
                               "'{value}'").format(attr=attribute.name,
                                                   cls=instance_name,
                                                   value=rights_of))
-    if allowed_by is not None and not isinstance(allowed_by, str):
-        raise ModelDataError(("'allowedBy' must be given as a string in "
-                              "the '{attr}' parameter of a '{cls}'. Given "
-                              "'{value}'").format(attr=attribute.name,
-                                                  cls=instance_name,
-                                                  value=rights_of))
-    if not (bool(rights_of) ^ bool(allowed_by)):
-        raise ModelDataError(("One and only one of 'rightsOf' or "
-                              "'allowedBy' can be given in the '{}' of "
-                              "a '{cls}'.").format(attribute.name,
-                                                   cls=instance_name))
-
-
-def is_copyright_model(instance, attribute, value):
-    """Must include at least a ``rightsOf`` key."""
-    is_right_model(instance, attribute, value)
-
-    if 'allowedBy' in value:
-        instance_name = instance.__class__.__name__
-        err_str = ("'allowedBy' must not be given in the '{attr}' parameter "
-                   "of a '{cls}'").format(attr=attribute.name,
-                                          cls=instance_name)
-        raise ModelDataError(err_str)

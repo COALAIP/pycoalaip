@@ -260,10 +260,11 @@ def mock_copyright_create_id():
 
 
 @fixture
-def right_data_factory(mock_copyright_create_id):
+def right_data_factory(mock_license_url, mock_copyright_create_id):
     def factory(*, allowedBy=mock_copyright_create_id, data=None):
         right_data = {
-            'allowedBy': allowedBy
+            'allowedBy': allowedBy,
+            'license': mock_license_url
         }
         return extend_dict(right_data, data)
     return factory
@@ -321,6 +322,11 @@ def right_entity(mock_plugin, right_data):
 @fixture
 def mock_right_create_id():
     return 'mock_right_create_id'
+
+
+@fixture
+def mock_license_url():
+    return 'https://ipdb.s3.amazonaws.com/mock_license.pdf'
 
 
 @fixture
