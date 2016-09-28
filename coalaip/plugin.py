@@ -14,7 +14,7 @@ class AbstractPlugin(ABC):
 
     @abstractproperty
     def type(self):
-        """A string denoting the type of plugin (e.g. BigchainDB)"""
+        """A string denoting the type of plugin (e.g. BigchainDB)."""
 
     @abstractmethod
     def generate_user(self, *args, **kwargs):
@@ -25,7 +25,7 @@ class AbstractPlugin(ABC):
             **kwargs: keyword arguments, as necessary
 
         Returns:
-            a representation of a user (e.g. a tuple with the user's
+            A representation of a user (e.g. a tuple with the user's
             public and private keypair) on the persistence layer
         """
 
@@ -34,15 +34,14 @@ class AbstractPlugin(ABC):
         """Get the status of an entity on the persistence layer.
 
         Args:
-            persist_id (str): the id of the entity on the persistence
-                layer
+            persist_id (str): Id of the entity on the persistence layer
 
         Returns:
-            the status of the entity, in any format.
+            Status of the entity, in any format.
 
         Raises:
-            :class:`coalaip.exceptions.EntityNotFoundError`: if the
-                entity could not be found on the persistence layer
+            :exc:`~.EntityNotFoundError`: If the entity could not be
+                found on the persistence layer
         """
 
     @abstractmethod
@@ -50,17 +49,17 @@ class AbstractPlugin(ABC):
         """Create the entity on the persistence layer.
 
         Args:
-            entity_data (dict): a dict holding the entity's data
-            user (, keyword): the user the entity should be assigned to
-                after creation. The user should be represented in the
+            entity_data (dict): The entity's data
+            user (any, keyword): The user the entity should be assigned
+                to after creation. The user must be represented in the
                 same format as :meth:`generate_user`'s output.
 
         Returns:
-            str: the id of the created entity on the persistence layer
+            str: Id of the created entity on the persistence layer
 
         Raises:
-            :class:`coalaip.exceptions.EntityCreationError`: if the
-                entity failed to be created
+            :exc:`~..EntityCreationError`: If the entity failed to be
+                created
         """
 
     @abstractmethod
@@ -68,33 +67,29 @@ class AbstractPlugin(ABC):
         """Load the entity from the persistence layer.
 
         Args:
-            persist_id (str): the id of the entity on the persistence
-                layer
+            persist_id (str): Id of the entity on the persistence layer
 
         Returns:
-            dict: the persisted data of the entity
+            dict: The persisted data of the entity
 
         Raises:
-            :class:`coalaip.exceptions.EntityNotFoundError`: if the
-                entity could not be found on the persistence layer
+            :exc:`~.EntityNotFoundError`: If the entity could not be
+                found on the persistence layer
         """
 
     @abstractmethod
     def transfer(self, persist_id, transfer_payload, *, from_user, to_user):
-        """Transfer the entity whose id matches 'persist_id' on the
-        persistence layer from the current user to a new owner.
+        """Transfer the entity whose id matches :attr:`persist_id` on
+        the persistence layer from the current user to a new owner.
 
         Args:
-            persist_id (str): the id of the entity on the persistence
-                layer
-            transfer_payload (dict): a dict holding the transfer's
-                payload
-            from_user (, keyword): the current owner, represented in the
+            persist_id (str): Id of the entity on the persistence layer
+            transfer_payload (dict): The transfer's payload
+            from_user (any, keyword): The current owner, represented in the
                 same format as :meth:`generate_user`'s output
-            to_user (, keyword): the new owner, represented in the same
+            to_user (any, keyword): The new owner, represented in the same
                 format as :meth:`generate_user`'s output
 
         Returns:
-            str: the id of the transfer action on the persistence
-            layer
+            str: Id of the transfer action on the persistence layer
         """
