@@ -117,7 +117,6 @@ def test_lazy_model_immutable(model_data, model_type):
 
 def test_lazy_model_load(mock_plugin, model_data, model_type,
                          mock_entity_create_id):
-    from attr.exceptions import FrozenInstanceError
     from coalaip.models import Model, LazyLoadableModel
     mock_plugin.load.return_value = model_data
 
@@ -131,13 +130,23 @@ def test_lazy_model_load(mock_plugin, model_data, model_type,
     assert model.loaded_model.ld_context == model.ld_context
     assert model.loaded_model.validator == model.validator
 
-    with raises(FrozenInstanceError):
-        model.loaded_model = Model(data={'other': 'other'}, ld_type='other_type')
-
     # If initialized with data, load() becomes a noop
     mock_plugin.reset_mock()
     model.load(mock_entity_create_id, plugin=mock_plugin)
     mock_plugin.load.assert_not_called()
+
+
+def test_lazy_model_immutable_after_load(mock_plugin, model_data, model_type,
+                                         mock_entity_create_id):
+    from attr.exceptions import FrozenInstanceError
+    from coalaip.models import Model, LazyLoadableModel
+    mock_plugin.load.return_value = model_data
+
+    model = LazyLoadableModel(ld_type=model_type)
+    model.load(mock_entity_create_id, plugin=mock_plugin)
+
+    with raises(FrozenInstanceError):
+        model.loaded_model = Model(data={'other': 'other'}, ld_type='other_type')
 
 
 @mark.parametrize('bad_type_data', [
