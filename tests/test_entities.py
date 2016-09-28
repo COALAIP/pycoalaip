@@ -143,6 +143,31 @@ def test_entity_from_data_consistent(mock_plugin, entity_cls_name, request):
     assert_key_values_present_in_dict(entity.to_jsonld(), **entity_data)
 
 
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_data_and_to_format_are_copies(mock_plugin, entity_cls_name,
+                                              request):
+    entity_cls = get_entity_cls(entity_cls_name)
+    entity_data = request.getfixturevalue(DATA_NAME_FOR_ENTITY_CLS[entity_cls_name])
+
+    entity = entity_cls.from_data(data=entity_data, plugin=mock_plugin)
+    data = entity.data
+    json = entity.to_json()
+    jsonld = entity.to_jsonld()
+
+    # Change the copied data
+    data['new_data'] = 'new_data'
+    json['new_data'] = 'new_data'
+    jsonld['new_data'] = 'new_data'
+
+    # Check that the entity's own data hasn't changed
+    assert entity.data != data
+    assert 'new_data' not in entity.data
+    assert entity.to_json() != json
+    assert 'new_data' not in entity.to_json()
+    assert entity.to_jsonld() != jsonld
+    assert 'new_data' not in entity.to_jsonld()
+
+
 @mark.parametrize('entity_cls_name', ['Work', 'Copyright', 'RightsAssignment'])
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])

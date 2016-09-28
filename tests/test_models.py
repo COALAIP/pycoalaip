@@ -53,6 +53,35 @@ def test_model_immutable(model_data, model_type):
         model.validator = validators.instance_of(str)
 
 
+def test_model_data_immutable(model_data, model_type):
+    from coalaip.models import Model
+    model = Model(data=model_data, ld_type=model_type)
+    with raises(TypeError):
+        model.data['new_data'] = 'new_data'
+    assert model.data == model_data
+
+
+@mark.parametrize('ld_context', [
+    'context',
+    ['array', 'for', 'context'],
+    {'a': 'dict', 'for': 'context'},
+    [{'mixed': 'array'}, 'for', 'context'],
+])
+def test_model_ld_context_immutable(model_data, model_type, ld_context):
+    from collections import Mapping
+    from coalaip.models import Model
+    model = Model(data=model_data, ld_type=model_type, ld_context=ld_context)
+    if isinstance(ld_context, str):
+        with raises(TypeError):
+            model.ld_context[0] = 'a'
+    elif isinstance(ld_context, Mapping):
+        with raises(TypeError):
+            model.ld_context['new_key'] = 'new_data'
+    else:
+        with raises(TypeError):
+            model.ld_context[0] = 'new_context'
+
+
 def test_lazy_model_init(model_type):
     from attr import validators
     from coalaip.models import LazyLoadableModel
@@ -115,6 +144,27 @@ def test_lazy_model_immutable(model_data, model_type):
         model.validator = validators.instance_of(str)
 
 
+@mark.parametrize('ld_context', [
+    'context',
+    ['array', 'for', 'context'],
+    {'a': 'dict', 'for': 'context'},
+    [{'mixed': 'array'}, 'for', 'context'],
+])
+def test_lazy_model_ld_context_immutable(model_type, ld_context):
+    from collections import Mapping
+    from coalaip.models import LazyLoadableModel
+    model = LazyLoadableModel(ld_type=model_type, ld_context=ld_context)
+    if isinstance(ld_context, str):
+        with raises(TypeError):
+            model.ld_context[0] = 'a'
+    elif isinstance(ld_context, Mapping):
+        with raises(TypeError):
+            model.ld_context['new_key'] = 'new_data'
+    else:
+        with raises(TypeError):
+            model.ld_context[0] = 'new_context'
+
+
 def test_lazy_model_load(mock_plugin, model_data, model_type,
                          mock_entity_create_id):
     from coalaip.models import Model, LazyLoadableModel
@@ -147,6 +197,20 @@ def test_lazy_model_immutable_after_load(mock_plugin, model_data, model_type,
 
     with raises(FrozenInstanceError):
         model.loaded_model = Model(data={'other': 'other'}, ld_type='other_type')
+
+
+def test_lazy_model_data_immutable_after_load(mock_plugin, model_data,
+                                              model_type,
+                                              mock_entity_create_id):
+    from coalaip.models import LazyLoadableModel
+    mock_plugin.load.return_value = model_data
+
+    model = LazyLoadableModel(ld_type=model_type)
+    model.load(mock_entity_create_id, plugin=mock_plugin)
+
+    with raises(TypeError):
+        model.data['new_data'] = 'new_data'
+    assert model.data == model_data
 
 
 @mark.parametrize('bad_type_data', [

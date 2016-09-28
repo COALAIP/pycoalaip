@@ -1,4 +1,5 @@
 from pytest import mark, raises
+from types import MappingProxyType
 
 
 @mark.parametrize('use_data_format_enum', [True, False])
@@ -18,6 +19,55 @@ def test_data_format_resolver(data_format, format_resolved,
 
     resolved = _data_format_resolver(data_format, resolver)
     assert resolved == format_resolved
+
+
+@mark.parametrize('immutable_ld_context', [
+    None,
+    'context',
+    ('tuple', 'for', 'context'),
+    MappingProxyType({'a': 'dict', 'for': 'context'}),
+    (MappingProxyType({'mixed': 'array'}), 'for', 'context'),
+])
+def test_copy_context_into_mutable(immutable_ld_context):
+    from collections import Mapping
+    from coalaip.data_formats import _copy_context_into_mutable
+    mutable_context = _copy_context_into_mutable(immutable_ld_context)
+
+    if not immutable_ld_context:
+        assert not mutable_context
+    elif isinstance(immutable_ld_context, str):
+        pass  # Strings are always immutable, nothing we can do 'bout that
+    elif isinstance(immutable_ld_context, Mapping):
+        mutable_context['new_key'] = 'new_data'
+        assert 'new_key' not in immutable_ld_context
+    else:
+        mutable_context[0] = 'other_context'
+        assert mutable_context[0] != immutable_ld_context[0]
+
+
+@mark.parametrize('mutable_ld_context', [
+    None,
+    'context',
+    ['array', 'for', 'context'],
+    {'a': 'dict', 'for': 'context'},
+    [{'mixed': 'array'}, 'for', 'context'],
+])
+def test_make_context_immutable(mutable_ld_context):
+    from collections import Mapping
+    from coalaip.data_formats import _make_context_immutable
+    immutable_context = _make_context_immutable(mutable_ld_context)
+
+    if not mutable_ld_context:
+        assert not immutable_context
+    elif isinstance(mutable_ld_context, str):
+        with raises(TypeError):
+            immutable_context[0] = 'a'
+    elif isinstance(mutable_ld_context, Mapping):
+        with raises(TypeError):
+            immutable_context['new_key'] = 'new_data'
+    else:
+        with raises(TypeError):
+            immutable_context[0] = 'other_context'
 
 
 def test_data_format_resolver_raises_on_bad_format():
