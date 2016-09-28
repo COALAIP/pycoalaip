@@ -5,13 +5,14 @@ Requires usage with a persistence layer plugin (see
 JSON, JSON-LD, and IPLD data formats are supported.
 
 .. note:: This module should not be used directly to generate entities,
-unless you are extending the built-ins for your own extensions. Instead,
-use the high-level functions (:mod:`.coalaip`) that return instances of
-these entities.
+          unless you are extending the built-ins for your own
+          extensions. Instead, use the high-level functions
+          (:mod:`.coalaip`) that return instances of these entities.
 
-..warning:: The immutability guarantees given in this module are
-best-effort. There is no general way to achieve immutability in Python,
-but we try our hardest to make it so.
+.. warning:: The immutability guarantees given in this module are
+             best-effort. There is no general way to achieve
+             immutability in Python, but we try our hardest to make it
+             so.
 """
 
 import attr

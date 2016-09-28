@@ -5,13 +5,15 @@ model validation and the loading of data from a backing persistence
 layer.
 
 .. note:: This module should not be used directly to generate models,
-unless you are extending the built-ins for your own extensions. Instead,
-use the models that are contained in the entities (:mod:`.entities`)
-returned from the high-level functions (:mod:`.coalaip`).
+          unless you are extending the built-ins for your own
+          extensions. Instead, use the models that are contained in the
+          entities (:mod:`.entities`) returned from the high-level
+          functions (:mod:`.coalaip`).
 
-..warning:: The immutability guarantees given in this module are
-best-effort. There is no general way to achieve immutability in Python,
-but we try our hardest to make it so.
+.. warning:: The immutability guarantees given in this module are
+             best-effort. There is no general way to achieve
+             immutability in Python, but we try our hardest to make it
+             so.
 """
 
 import attr
