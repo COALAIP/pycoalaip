@@ -672,8 +672,8 @@ def test_right_transfer_raises_if_not_persisted(alice_user, bob_user,
 
 
 def test_rights_assignment_cannot_create(rights_assignment_entity, alice_user):
-    from coalaip.exceptions import EntityError
-    with raises(EntityError):
+    from coalaip.exceptions import PersistenceError
+    with raises(PersistenceError):
         rights_assignment_entity.create(user=alice_user)
 
 

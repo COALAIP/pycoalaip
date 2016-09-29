@@ -25,10 +25,10 @@ from coalaip.data_formats import (
     _extract_ld_data,
 )
 from coalaip.exceptions import (
-    EntityError,
     EntityNotYetPersistedError,
     EntityPreviouslyCreatedError,
     ModelNotYetLoadedError,
+    PersistenceError,
 )
 from coalaip.models import (
     Model,
@@ -531,10 +531,10 @@ class RightsAssignment(Entity):
 
     def create(self, *args, **kwargs):
         """Removes the ability to persist a :class:`~.RightsAssignment`
-        normally. Raises :exc:`~.EntityError` if called.
+        normally. Raises :exc:`~.PersistenceError` if called.
         """
-        raise EntityError(('RightsAssignments can only be created through '
-                           'transer transactions.'))
+        raise PersistenceError(('RightsAssignments can only be created '
+                                ' through transer transactions.'))
 
     @classmethod
     def generate_model(cls, *args, **kwargs):
