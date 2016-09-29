@@ -42,6 +42,9 @@ Library Reference
 .. autoclass:: Copyright
     :members:
 
+.. autoclass:: RightsAssignment
+    :members:
+
 ``Base Entities``
 ^^^^^^^^^^^^^^^^^
 
