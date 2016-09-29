@@ -67,14 +67,23 @@ def mock_entity_context():
 @fixture
 def mock_creation_error():
     from coalaip.exceptions import EntityCreationError
-    exception = EntityCreationError(mock_creation_error)
+    exception = EntityCreationError('mock_creation_error',
+                                    error=Exception())
+    return exception
+
+
+@fixture
+def mock_not_found_error():
+    from coalaip.exceptions import EntityNotFoundError
+    exception = EntityNotFoundError('mock_not_found_error')
     return exception
 
 
 @fixture
 def mock_transfer_error():
     from coalaip.exceptions import EntityTransferError
-    exception = EntityTransferError(mock_transfer_error)
+    exception = EntityTransferError('mock_transfer_error',
+                                    error=Exception())
     return exception
 
 

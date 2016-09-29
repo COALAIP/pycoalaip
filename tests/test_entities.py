@@ -437,6 +437,22 @@ def test_entity_load_raises_if_not_persisted(mock_plugin, entity_cls_name):
         entity.load()
 
 
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_load_raises_on_load_error(mock_plugin, entity_cls_name,
+                                          mock_not_found_error,
+                                          mock_entity_create_id):
+    from coalaip.models import LazyLoadableModel
+    from coalaip.exceptions import EntityNotFoundError
+    entity_cls = get_entity_cls(entity_cls_name)
+    model = entity_cls.generate_model(model_cls=LazyLoadableModel)
+    entity = entity_cls(model, mock_plugin)
+    entity.persist_id = mock_entity_create_id
+
+    mock_plugin.load.side_effect = mock_not_found_error
+    with raises(EntityNotFoundError):
+        entity.load()
+
+
 @mark.parametrize('entity_name', ALL_ENTITIES)
 def test_entity_have_none_status_if_not_persisted(mock_plugin, entity_name,
                                                   request):
@@ -672,8 +688,8 @@ def test_right_transfer_raises_if_not_persisted(alice_user, bob_user,
 
 
 def test_rights_assignment_cannot_create(rights_assignment_entity, alice_user):
-    from coalaip.exceptions import EntityError
-    with raises(EntityError):
+    from coalaip.exceptions import PersistenceError
+    with raises(PersistenceError):
         rights_assignment_entity.create(user=alice_user)
 
 

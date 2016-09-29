@@ -158,6 +158,10 @@ class LazyLoadableModel(PostInitImmutable):
                 validation from :attr:`~.LazyLoadableEntity.validator`
                 or its type or context differs from their expected
                 values
+            :exc:`~.EntityNotFoundError`: If the entity could not be
+                found on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
         if self.loaded_model:
             return

@@ -48,13 +48,18 @@ class CoalaIp:
         """Generate a new user for the backing persistence layer.
 
         Args:
-            *args: argument list passed to the plugin's generate_user()
-            **kwargs: keyword arguments passed to the plugin's
+            *args: Argument list passed to the plugin's
+                ``generate_user()``
+            **kwargs: Keyword arguments passed to the plugin's
                 ``generate_user()``
 
         Returns:
-            a representation of a user, based on the persistence layer
+            A representation of a user, based on the persistence layer
             plugin
+
+        Raises:
+            :exc:`~.PersistenceError`: If a user couldn't be generated
+                on the persistence layer
         """
 
         return self._plugin.generate_user(*args, **kwargs)
@@ -115,15 +120,17 @@ class CoalaIp:
             :exc:`~.ModelDataError`: If the :attr:`manifestation_data`
                 or :attr:`work_data` contain invalid or are missing
                 required properties.
-            :exc:`~.EntityNotYetPersistedError`: if the
+            :class:`~.IncompatiblePluginError`: If the
+                :attr:`existing_work` is not using a compatible plugin
+            :exc:`~.EntityNotYetPersistedError`: If the
                 :attr:`existing_work` is not associated with an id on the
                 persistence layer (:attr:`~.Entity.persist_id`) yet
-            :exc:`~.EntityCreationError`: if the manifestation, its
+            :exc:`~.EntityCreationError`: If the manifestation, its
                 copyright, or the automatically created work (if no
                 existing work is given) fail to be created on the
                 persistence layer
-            :class:`~.IncompatiblePluginError`: If the
-                :attr:`existing_work` is not using a compatible plugin
+            :exc:`~.PersistenceError`: If any other error occurred with
+                the persistence layer
         """
 
         # TODO: in the future, we may want to consider blocking (or asyncing) until
@@ -202,11 +209,13 @@ class CoalaIp:
         Raises:
             :exc:`~.ModelDataError`: If the :attr:`right_data`
                 contains invalid or is missing required properties.
-            :exc:`~.EntityNotYetPersistedError`: if the
+            :exc:`~.EntityNotYetPersistedError`: If the
                 :attr:`source_right` is not associated with an id on the
                 persistence layer (:attr:`~.Entity.persist_id`) yet
-            :exc:`~.EntityCreationError`: if the Right fails to be
+            :exc:`~.EntityCreationError`: If the Right fails to be
                 created on the persistence layer
+            :exc:`~.PersistenceError`: If any other error occurred with
+                the persistence layer
         """
 
         # TODO: add validation that the `current_user` is actually the holder
@@ -263,10 +272,14 @@ class CoalaIp:
             associated with this transfer
 
         Raises:
-            :exc:`~.EntityNotYetPersistedError`: if the :attr:`right`
+            :exc:`~.EntityNotYetPersistedError`: If the :attr:`right`
                 has not been persisted yet
-            :exc:`~.EntityTransferError`: if the :attr:`right` fails to
+            :exc:`~.EntityNotFoundError`: If the :attr:`right` was not
+                found on the persistence layer
+            :exc:`~.EntityTransferError`: If the :attr:`right` fails to
                 be transferred on the persistence layer
+            :exc:`~.PersistenceError`: If any other error occurred with
+                the persistence layer
         """
 
         if not isinstance(right, Right):

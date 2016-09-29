@@ -27,6 +27,10 @@ class AbstractPlugin(ABC):
         Returns:
             A representation of a user (e.g. a tuple with the user's
             public and private keypair) on the persistence layer
+
+        Raises:
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
 
     @abstractmethod
@@ -42,6 +46,8 @@ class AbstractPlugin(ABC):
         Raises:
             :exc:`~.EntityNotFoundError`: If the entity could not be
                 found on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
 
     @abstractmethod
@@ -60,6 +66,8 @@ class AbstractPlugin(ABC):
         Raises:
             :exc:`~..EntityCreationError`: If the entity failed to be
                 created
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
 
     @abstractmethod
@@ -75,6 +83,8 @@ class AbstractPlugin(ABC):
         Raises:
             :exc:`~.EntityNotFoundError`: If the entity could not be
                 found on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
 
     @abstractmethod
@@ -92,4 +102,12 @@ class AbstractPlugin(ABC):
 
         Returns:
             str: Id of the transfer action on the persistence layer
+
+        Raises:
+            :exc:`~.EntityNotFoundError`: If the entity could not be
+                found on the persistence layer
+            :exc:`~..EntityTransferError`: If the entity failed to be
+                transferred
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
