@@ -716,8 +716,3 @@ def test_right_transfer_raises_on_transfer_error(mock_plugin, alice_user,
         right_entity.transfer(rights_assignment_data, from_user=alice_user,
                               to_user=bob_user)
     assert mock_transfer_error == excinfo.value
-
-
-@mark.skip('Rights Assignments require transfer() to be implemented')
-def test_rights_assignment_get_status(rights_assignment_entity):
-    pass
