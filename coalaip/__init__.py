@@ -5,3 +5,5 @@ __version__ = '0.0.1.dev2'
 from coalaip.coalaip import (  # noqa
     CoalaIp
 )
+
+from coalaip.exceptions import *  # noqa
