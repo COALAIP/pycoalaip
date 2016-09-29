@@ -274,6 +274,8 @@ class Entity(ABC, PostInitImmutable):
             :exc:`~.EntityPreviouslyCreatedError`: If the entity has
                 already been persisted. Contains the existing id of the
                 entity on the persistence layer.
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
 
         if self.persist_id is not None:
@@ -299,6 +301,8 @@ class Entity(ABC, PostInitImmutable):
             :exc:`~.EntityNotFoundError`: If the entity has a
                 :attr:`~Entity.persist_id` but could not be found on
                 the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
             :exc:`~.ModelDataError`: If the loaded entity's data fails
                 validation or its type or context differs from their
                 expected values
@@ -380,8 +384,12 @@ class TransferrableEntity(Entity):
             :exc:`~.EntityNotYetPersistedError`: If the entity being
                 transferred is not associated with an id on the
                 persistence layer (:attr:`~Entity.persist_id`) yet
+            :exc:`~.EntityNotFoundError`: If the entity could not be
+                found on the persistence layer
             :exc:`~.EntityTransferError`: If the entity fails to be
                 transferred on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
 
         if self.persist_id is None:
