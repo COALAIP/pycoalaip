@@ -84,7 +84,17 @@ prefer one of the :ref:`core-entities` instead.
 
 .. automodule:: coalaip.exceptions
 
-.. autoclass:: EntityError
+.. autoclass:: CoalaIpError
+
+.. autoclass:: IncompatiblePluginError
+
+.. autoclass:: ModelError
+
+.. autoclass:: ModelDataError
+
+.. autoclass:: ModelNotYetLoadedError
+
+.. autoclass:: PersistenceError
 
 .. autoclass:: EntityCreationError
 
@@ -94,11 +104,7 @@ prefer one of the :ref:`core-entities` instead.
 
 .. autoclass:: EntityPreviouslyCreatedError
 
-.. autoclass:: ModelError
-
-.. autoclass:: ModelDataError
-
-.. autoclass:: ModelNotYetLoadedError
+.. autoclass:: EntityTransferError
 
 
 ``plugin``
