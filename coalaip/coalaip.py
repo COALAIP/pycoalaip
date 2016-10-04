@@ -1,5 +1,7 @@
 """High-level functions for interacting with COALA IP entities"""
 
+import attr
+
 from collections import namedtuple
 from coalaip.exceptions import (
     EntityNotYetPersistedError,
@@ -13,6 +15,7 @@ RegistrationResult = namedtuple('RegistrationResult',
                                 ['copyright', 'manifestation', 'work'])
 
 
+@attr.s(frozen=True, repr=False)
 class CoalaIp:
     """High-level, plugin-bound COALA IP functions.
 
@@ -24,25 +27,14 @@ class CoalaIp:
         - :func:`register_manifestation`
         - :func:`derive_right`
         - :func:`transfer_right`
+
+    Attributes:
+        plugin (Plugin): Bound persistence layer plugin.
     """
-
-    def __init__(self, plugin):
-        """Instantiate a new CoalaIp wrapper object.
-
-        Args:
-            plugin (Plugin, keyword): Persistence layer plugin
-        """
-
-        if not isinstance(plugin, AbstractPlugin):
-            raise TypeError(('A plugin subclassing '
-                             "'coalaip.plugin.AbstractPlugin' must be "
-                             'provided when instantiating a CoalaIp instance. '
-                             'Given a plugin of type '
-                             "'{}' instead.".format(type(plugin))))
-        self._plugin = plugin
+    plugin = attr.ib(validator=attr.validators.instance_of(AbstractPlugin))
 
     def __repr__(self):
-        return 'CoalaIp bound to plugin: {}'.format(self._plugin)
+        return 'CoalaIp bound to plugin: {}'.format(self.plugin)
 
     def generate_user(self, *args, **kwargs):
         """Generate a new user for the backing persistence layer.
@@ -62,7 +54,7 @@ class CoalaIp:
                 on the persistence layer
         """
 
-        return self._plugin.generate_user(*args, **kwargs)
+        return self.plugin.generate_user(*args, **kwargs)
 
     # TODO: could probably have a 'safe' check to make sure the entities are actually created
     def register_manifestation(self, manifestation_data, *, copyright_holder,
@@ -142,7 +134,7 @@ class CoalaIp:
             if existing_work is None:
                 if work_data is None:
                     work_data = {'name': manifestation_data.get('name')}
-                work = Work.from_data(work_data, plugin=self._plugin)
+                work = Work.from_data(work_data, plugin=self.plugin)
                 work.create(copyright_holder, **kwargs)
             elif not isinstance(existing_work, Work):
                 raise TypeError(("'existing_work' argument to "
@@ -155,21 +147,21 @@ class CoalaIp:
                      "'register_manifestation()' must be already created on "
                      'the backing persistence layer.')
                 )
-            elif existing_work.plugin != self._plugin:
+            elif existing_work.plugin != self.plugin:
                 raise IncompatiblePluginError([
-                    self._plugin,
+                    self.plugin,
                     existing_work.plugin,
                 ])
 
             manifestation_data['manifestationOfWork'] = work.persist_id
 
         manifestation = Manifestation.from_data(manifestation_data,
-                                                plugin=self._plugin)
+                                                plugin=self.plugin)
         manifestation.create(copyright_holder, **kwargs)
 
         copyright_data = {'rightsOf': manifestation.persist_id}
         manifestation_copyright = Copyright.from_data(copyright_data,
-                                                      plugin=self._plugin)
+                                                      plugin=self.plugin)
         manifestation_copyright.create(copyright_holder, **kwargs)
 
         return RegistrationResult(manifestation_copyright, manifestation, work)
@@ -235,15 +227,15 @@ class CoalaIp:
                     ("Right given as 'source_right' to 'derive_right()' must "
                      'be already created on the backing persistence layer.')
                 )
-            elif source_right.plugin != self._plugin:
+            elif source_right.plugin != self.plugin:
                 raise IncompatiblePluginError([
-                    self._plugin,
+                    self.plugin,
                     source_right.plugin,
                 ])
 
             right_data['allowedBy'] = source_right.persist_id
 
-        right = right_entity_cls.from_data(right_data, plugin=self._plugin)
+        right = right_entity_cls.from_data(right_data, plugin=self.plugin)
         right.create(current_holder, **kwargs)
         return right
 
@@ -291,8 +283,8 @@ class CoalaIp:
                 ("Right given as 'right' to 'transfer_right()' must be "
                  'already created on the backing persistence layer.')
             )
-        elif right.plugin != self._plugin:
-            raise IncompatiblePluginError([self._plugin, right.plugin])
+        elif right.plugin != self.plugin:
+            raise IncompatiblePluginError([self.plugin, right.plugin])
 
         return right.transfer(rights_assignment_data, from_user=current_holder,
                               to_user=to, **kwargs)
