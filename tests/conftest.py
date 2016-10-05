@@ -418,13 +418,13 @@ def persisted_jsonld_registration(mock_plugin, mock_coalaip,
 def persisted_jsonld_derived_right(mock_plugin, mock_coalaip, alice_user,
                                    persisted_jsonld_registration, right_data,
                                    mock_right_create_id):
-    copyright = persisted_jsonld_registration.copyright
+    copyright_ = persisted_jsonld_registration.copyright
     # Remove the 'allowedBy' key to use the persisted copyright
     del right_data['allowedBy']
 
     mock_plugin.save.return_value = 'asdf'
     right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
-                                      source_right=copyright)
+                                      source_right=copyright_)
 
     # Reset mock for later users
     mock_plugin.save.reset_mock()
