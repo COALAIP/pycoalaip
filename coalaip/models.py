@@ -240,20 +240,18 @@ def manifestation_model_factory(*, validator=validators.is_manifestation_model,
 
 
 def right_model_factory(*, validator=validators.is_right_model,
-                        ld_type='Right', ld_context=context_urls.COALAIP,
-                        **kwargs):
+                        ld_type='Right', **kwargs):
     """Generate a Right model.
 
     Expects ``data``, ``validator``, ``model_cls``, ``ld_type``, and
     ``ld_context`` as keyword arguments.
     """
-    return _model_factory(validator=validator, ld_type=ld_type,
-                          ld_context=ld_context, **kwargs)
+    return _model_factory(validator=validator, ld_type=ld_type, **kwargs)
 
 
 @_raise_if_not_given_ld_type('Copyright', 'Copyright')
 def copyright_model_factory(*, validator=validators.is_copyright_model,
-                            ld_context=context_urls.COALAIP, **kwargs):
+                            **kwargs):
     """Generate a Copyright model.
 
     Expects ``data``, ``validator``, ``model_cls``, and ``ld_context``
@@ -264,12 +262,11 @@ def copyright_model_factory(*, validator=validators.is_copyright_model,
             argument is given.
     """
     kwargs['ld_type'] = 'Copyright'
-    return _model_factory(validator=validator, ld_context=ld_context, **kwargs)
+    return _model_factory(validator=validator, **kwargs)
 
 
 @_raise_if_not_given_ld_type('RightsAssignment', 'RightsTransferAction')
-def rights_assignment_model_factory(*, ld_context=context_urls.COALAIP,
-                                    **kwargs):
+def rights_assignment_model_factory(**kwargs):
     """Generate a RightsAssignment model.
 
     Expects ``data``, ``validator``, ``model_cls``, and ``ld_context``
@@ -280,4 +277,4 @@ def rights_assignment_model_factory(*, ld_context=context_urls.COALAIP,
             keyword argument is given.
     """
     kwargs['ld_type'] = 'RightsTransferAction'
-    return _model_factory(ld_context=ld_context, **kwargs)
+    return _model_factory(**kwargs)
