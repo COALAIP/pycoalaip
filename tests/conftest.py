@@ -14,12 +14,6 @@ def bob_user():
 
 
 @fixture
-def context_urls_coalaip():
-    from coalaip.context_urls import COALAIP
-    return COALAIP
-
-
-@fixture
 def context_urls_all():
     from coalaip.context_urls import COALAIP, SCHEMA
     return [COALAIP, SCHEMA]
@@ -220,10 +214,10 @@ def copyright_data(copyright_data_factory):
 
 
 @fixture
-def copyright_jsonld_factory(context_urls_coalaip, copyright_data_factory):
+def copyright_jsonld_factory(context_urls_all, copyright_data_factory):
     def factory(**kwargs):
         ld_data = {
-            '@context': context_urls_coalaip,
+            '@context': context_urls_all,
             '@type': 'Copyright',
             '@id': '',
         }
@@ -285,10 +279,10 @@ def right_data(right_data_factory):
 
 
 @fixture
-def right_jsonld_factory(context_urls_coalaip, right_data_factory):
+def right_jsonld_factory(context_urls_all, right_data_factory):
     def factory(**kwargs):
         ld_data = {
-            '@context': context_urls_coalaip,
+            '@context': context_urls_all,
             '@type': 'Right',
             '@id': '',
         }
@@ -351,9 +345,9 @@ def rights_assignment_data(mock_transfer_contract_url):
 
 
 @fixture
-def rights_assignment_jsonld(context_urls_coalaip, rights_assignment_data):
+def rights_assignment_jsonld(context_urls_all, rights_assignment_data):
     ld_data = {
-        '@context': context_urls_coalaip,
+        '@context': context_urls_all,
         '@type': 'RightsTransferAction',
         '@id': '',
     }
