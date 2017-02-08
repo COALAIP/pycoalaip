@@ -47,7 +47,7 @@ from coalaip.utils import PostInitImmutable
 class Entity(ABC, PostInitImmutable):
     """Abstract base class of all COALA IP entity models.
 
-    **Immutable (see :class:`.PostInitImmutable`)**.
+    **Immutable (see :class:`~.PostInitImmutable`)**.
 
     Implements base functionality for all COALA IP entities, including
     entity creation (:meth:`create`) and status queries (:attr:`status`)
