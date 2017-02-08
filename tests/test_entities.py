@@ -454,6 +454,97 @@ def test_entity_load_raises_on_load_error(mock_plugin, entity_cls_name,
 
 
 @mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_has_no_current_owner_if_not_persisted(mock_plugin, entity_name,
+                                                      request):
+    entity = request.getfixturevalue(entity_name)
+    current_owner = entity.current_owner
+    assert current_owner is None
+    mock_plugin.get_history.assert_not_called()
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_current_owner(mock_plugin, alice_user, bob_user, entity_name,
+                              mock_entity_create_id, request):
+    entity = request.getfixturevalue(entity_name)
+    mock_history = [{
+        'user': alice_user,
+        'ref_id': mock_entity_create_id,
+    }, {
+        'user': bob_user,
+        'ref_id': mock_entity_create_id,
+    }]
+
+    entity.persist_id = mock_entity_create_id
+
+    # Test current owner returned
+    mock_plugin.get_history.return_value = mock_history
+    current_owner = entity.current_owner
+    assert mock_plugin.get_history.call_count == 1
+    assert current_owner == bob_user
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_current_owner_raises_if_not_found(mock_plugin, alice_user,
+                                                  entity_name,
+                                                  mock_entity_create_id,
+                                                  request):
+    from coalaip.exceptions import EntityNotFoundError
+    entity = request.getfixturevalue(entity_name)
+
+    entity.persist_id = mock_entity_create_id
+
+    mock_plugin.get_history.side_effect = EntityNotFoundError()
+    with raises(EntityNotFoundError):
+        entity.current_owner
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_has_no_history_if_not_persisted(mock_plugin, entity_name,
+                                                request):
+    entity = request.getfixturevalue(entity_name)
+    history = entity.history
+    assert history == []
+    mock_plugin.get_history.assert_not_called()
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_history(mock_plugin, alice_user, bob_user, entity_name,
+                        mock_entity_create_id, request):
+    entity = request.getfixturevalue(entity_name)
+    mock_history = [{
+        'user': alice_user,
+        'ref_id': mock_entity_create_id,
+    }, {
+        'user': bob_user,
+        'ref_id': mock_entity_create_id,
+    }]
+
+    entity.persist_id = mock_entity_create_id
+
+    # Test history is returned with the same events
+    mock_plugin.get_history.return_value = mock_history
+    returned_history = entity.history
+    assert mock_plugin.get_history.call_count == 1
+
+    for returned_event, original_event in zip(returned_history, mock_history):
+        assert returned_event == original_event
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
+def test_entity_history_raises_if_not_found(mock_plugin, alice_user,
+                                            entity_name, mock_entity_create_id,
+                                            request):
+    from coalaip.exceptions import EntityNotFoundError
+    entity = request.getfixturevalue(entity_name)
+
+    entity.persist_id = mock_entity_create_id
+
+    mock_plugin.get_history.side_effect = EntityNotFoundError()
+    with raises(EntityNotFoundError):
+        entity.history
+
+
+@mark.parametrize('entity_name', ALL_ENTITIES)
 def test_entity_have_none_status_if_not_persisted(mock_plugin, entity_name,
                                                   request):
     entity = request.getfixturevalue(entity_name)
