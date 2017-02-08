@@ -43,7 +43,7 @@ class Model:
     """Basic data model class for COALA IP entities. Includes Linked
     Data (JSON-LD) specifics.
 
-    **Immutable (see :class:`.PostInitImmutable` and attributes)**.
+    **Immutable (see :class:`~.PostInitImmutable` and attributes)**.
 
     Initialization may throw if attribute validation fails.
 
