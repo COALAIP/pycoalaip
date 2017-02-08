@@ -34,6 +34,33 @@ class AbstractPlugin(ABC):
         """
 
     @abstractmethod
+    def get_history(self, persist_id):
+        """Get the ownership history of an entity on the persistence
+        layer.
+
+        Args:
+            persist_id (str): Id of the entity on the persistence layer
+
+        Returns:
+            list of dict: The ownership history of the entity, sorted
+            starting from the beginning of the entity's history
+            (i.e. creation). Each dict is of the form::
+
+                {
+                    'user': A representation of a user as specified by the
+                            persistence layer (may omit secret details, e.g. private keys),
+                    'ref_id': A reference id for the ownership event (e.g. transfer id)
+                }
+
+
+        Raises:
+            :exc:`~.EntityNotFoundError`: If the entity could not be
+                found on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
+        """
+
+    @abstractmethod
     def get_status(self, persist_id):
         """Get the status of an entity on the persistence layer.
 

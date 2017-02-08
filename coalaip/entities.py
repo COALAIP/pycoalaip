@@ -91,6 +91,23 @@ class Entity(ABC, PostInitImmutable):
                                                 data=data_str)
 
     @property
+    def current_owner(self):
+        """any: A user based on the model specified by the persistence
+        layer if a current owner exists, otherwise None.
+        In the case where the user model contains secret information,
+        the returned user may omit this information.
+
+        Raises:
+            :exc:`~.EntityNotFoundError`: If the entity is persisted,
+                but could not be found on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
+        """
+
+        history = self.history
+        return history[-1]['user'] if history else None
+
+    @property
     def data(self):
         """dict: A copy of the basic data held by this entity model.
         Does not include any JSON-LD or IPLD specific information.
@@ -109,6 +126,28 @@ class Entity(ABC, PostInitImmutable):
         return dict(data)
 
     @property
+    def history(self):
+        """list of dict: A list containing the ownership history of this
+        entity. Each item in the list is a dict containing a user based
+        on the model specified by the persistence layer and a reference
+        id for the event (e.g. transfer). The ownership events are
+        sorted starting from the beginning of the entity's history
+        (i.e. creation).
+        In the case where the user model contains secret information,
+        the returned user may omit this information.
+
+        Raises:
+            :exc:`~.EntityNotFoundError`: If the entity is persisted,
+                but could not be found on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
+        """
+
+        if self.persist_id is None:
+            return []
+        return self.plugin.get_history(self.persist_id)
+
+    @property
     def status(self):
         """The current status of this entity in the backing persistence
         layer, as defined by :attr:`Entity.plugin`. Initially ``None``.
@@ -116,6 +155,8 @@ class Entity(ABC, PostInitImmutable):
         Raises:
             :exc:`~.EntityNotFoundError`: If the entity is persisted,
                 but could not be found on the persistence layer
+            :exc:`~.PersistenceError`: If any other unhandled error
+                in the plugin occurred
         """
 
         if self.persist_id is None:
@@ -241,7 +282,8 @@ class Entity(ABC, PostInitImmutable):
             :attr:`cls`: A generated entity based on :attr:`persist_id`
 
         Raises:
-            If :attr:`force_load` is ``True``, see :meth:`load`.
+            If :attr:`force_load` is ``True``, see :meth:`load` for the
+            list of possible exceptions.
         """
 
         model = cls.generate_model(model_cls=LazyLoadableModel)
