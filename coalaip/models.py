@@ -180,7 +180,7 @@ class LazyLoadableModel(PostInitImmutable):
                  "@type ('{self_type})'").format(loaded_type=loaded_type,
                                                  self_type=self.ld_type)
             )
-        if loaded_context and loaded_context != self.ld_context:
+        if loaded_context and list(loaded_context) != list(self.ld_context):
             raise ModelDataError(
                 ("Loaded context ('{loaded_ctx}') differs from entity's "
                  "context ('{self_ctx}')").format(loaded_ctx=loaded_context,
