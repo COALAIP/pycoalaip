@@ -168,7 +168,7 @@ def test_entity_data_and_to_format_are_copies(mock_plugin, entity_cls_name,
     assert 'new_data' not in entity.to_jsonld()
 
 
-@mark.parametrize('entity_cls_name', ['Work', 'Copyright', 'RightsAssignment'])
+@mark.parametrize('entity_cls_name', ['Copyright', 'RightsAssignment'])
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])
 def test_strict_type_entity_raises_on_diff_type_from_data(
@@ -196,7 +196,7 @@ def test_strict_type_entity_raises_on_diff_type_from_data(
         entity_cls.from_data(plugin=mock_plugin, **kwargs)
 
 
-@mark.parametrize('entity_cls_name', ['Manifestation', 'Right'])
+@mark.parametrize('entity_cls_name', ['Work', 'Manifestation', 'Right'])
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', ['json', 'jsonld', mark.skip('ipld')])
 def test_non_strict_type_entity_keeps_diff_type_from_data(
@@ -221,7 +221,7 @@ def test_non_strict_type_entity_keeps_diff_type_from_data(
 
     entity = entity_cls.from_data(plugin=mock_plugin, **kwargs)
 
-    # Test entity ignores specified @type
+    # Test entity uses specified @type
     assert entity.model.ld_type == mock_entity_type
     assert entity.to_jsonld()['@type'] == mock_entity_type
 
