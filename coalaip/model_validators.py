@@ -103,13 +103,13 @@ def is_manifestation_model(instance, attribute, value):
 
 @does_not_contain('rightsOf', error_cls=ModelDataError)
 def is_right_model(instance, attribute, value):
-    """Must include at least the ``allowedBy`` and ``license`` keys, but
-    not a ``rightsOf`` key (``allowedBy`` indicates that the Right is
+    """Must include at least the ``source`` and ``license`` keys, but
+    not a ``rightsOf`` key (``source`` indicates that the Right is
     derived from and allowed by a source Right; it cannot contain the
     full rights to a Creation).
     """
 
-    for key in ['allowedBy', 'license']:
+    for key in ['source', 'license']:
         key_value = value.get(key)
         if not isinstance(key_value, str):
             instance_name = instance.__class__.__name__
@@ -121,9 +121,9 @@ def is_right_model(instance, attribute, value):
                                                       value=key_value))
 
 
-@does_not_contain('allowedBy', error_cls=ModelDataError)
+@does_not_contain('source', error_cls=ModelDataError)
 def is_copyright_model(instance, attribute, value):
-    """Must include at least a ``rightsOf`` key, but not a ``allowedBy``
+    """Must include at least a ``rightsOf`` key, but not a ``source``
     key (``rightsOf`` indicates that the Right contains full rights to
     an existing Manifestation or Work; i.e. is a Copyright).
     """

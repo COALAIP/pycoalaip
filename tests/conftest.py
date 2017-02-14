@@ -264,9 +264,9 @@ def mock_copyright_create_id():
 
 @fixture
 def right_data_factory(mock_license_url, mock_copyright_create_id):
-    def factory(*, allowedBy=mock_copyright_create_id, data=None):
+    def factory(*, source=mock_copyright_create_id, data=None):
         right_data = {
-            'allowedBy': allowedBy,
+            'source': source,
             'license': mock_license_url
         }
         return extend_dict(right_data, data)
@@ -413,8 +413,8 @@ def persisted_jsonld_derived_right(mock_plugin, mock_coalaip, alice_user,
                                    persisted_jsonld_registration, right_data,
                                    mock_right_create_id):
     copyright_ = persisted_jsonld_registration.copyright
-    # Remove the 'allowedBy' key to use the persisted copyright
-    del right_data['allowedBy']
+    # Remove the 'source' key to use the persisted copyright
+    del right_data['source']
 
     mock_plugin.save.return_value = 'asdf'
     right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
