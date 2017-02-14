@@ -33,6 +33,14 @@ Features
 
 * TODO
 
+
+TODO
+----
+
+* [ ] Host COALA IP JSON-LD definitions and set `<coalaip placeholder>` to the
+  purl for the definitions.
+
+
 Credits
 ---------
 
