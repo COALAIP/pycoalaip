@@ -653,15 +653,15 @@ def test_manifestation_init_raises_with_false_is_manifestation(
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
 
-def test_right_init_raises_without_str_allowed_by(mock_plugin, right_data):
+def test_right_init_raises_without_str_source(mock_plugin, right_data):
     from coalaip.entities import Right
     from coalaip.exceptions import ModelDataError
 
-    del right_data['allowedBy']
+    del right_data['source']
     with raises(ModelDataError):
         Right.from_data(right_data, plugin=mock_plugin)
 
-    right_data['allowedBy'] = {}
+    right_data['source'] = {}
     with raises(ModelDataError):
         Right.from_data(right_data, plugin=mock_plugin)
 
@@ -699,7 +699,7 @@ def test_copyright_init_raises_if_derived(mock_plugin, right_data,
     from coalaip.exceptions import ModelDataError
 
     copyright_data = right_data
-    assert copyright_data['allowedBy']
+    assert copyright_data['source']
     with raises(ModelDataError):
         Copyright.from_data(copyright_data, plugin=mock_plugin)
 

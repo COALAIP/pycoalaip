@@ -324,24 +324,24 @@ def test_derive_right(mock_plugin, mock_coalaip, right_data, alice_user,
                                              user=alice_user)
 
 
-def test_derive_right_with_allowed_by_in_data(mock_plugin, mock_coalaip,
-                                              right_data_factory, alice_user,
-                                              copyright_entity,
-                                              mock_right_create_id):
+def test_derive_right_with_source_in_data(mock_plugin, mock_coalaip,
+                                          right_data_factory, alice_user,
+                                          copyright_entity,
+                                          mock_right_create_id):
     ignored_copyright_entity = copyright_entity
     provided_copyright_id = 'provided_copyright_id'
     mock_plugin.save.return_value = mock_right_create_id
 
-    # Create the default right model, but change the 'allowedBy' key to
+    # Create the default right model, but change the 'source' key to
     # differentiate it from copyright_entity
     right_data = right_data_factory(data={
-        'allowedBy': provided_copyright_id
+        'source': provided_copyright_id
     })
 
     # Create the Right and test it was persisted with the correct Copyright
     right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                       source_right=ignored_copyright_entity)
-    assert right.data['allowedBy'] == provided_copyright_id
+    assert right.data['source'] == provided_copyright_id
 
 
 def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
@@ -351,14 +351,14 @@ def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
     persisted_copyright = persisted_jsonld_registration.copyright
     mock_plugin.save.return_value = mock_right_create_id
 
-    # Remove the 'allowedBy' key to use the source_right
-    del right_data['allowedBy']
+    # Remove the 'source' key to use the source_right
+    del right_data['source']
 
     # Test the new Right is created with the given source_right
     mock_plugin.reset_mock()  # Reset call counts on the mock from before
     right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                       source_right=persisted_copyright)
-    assert right.data['allowedBy'] == persisted_copyright.persist_id
+    assert right.data['source'] == persisted_copyright.persist_id
 
     # Check we called plugin.save() with the correct Copyright
     mock_plugin.save.assert_called_once_with(right.to_jsonld(),
@@ -388,13 +388,13 @@ def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
     assert isinstance(custom_right, CustomRight)
     assert custom_right.to_json()['type'] == custom_right_type
     assert custom_right.persist_id == mock_right_create_id
-    assert custom_right.data['allowedBy'] == right_data['allowedBy']
+    assert custom_right.data['source'] == right_data['source']
 
 
 def test_derive_right_with_existing_source_right_raises_on_non_right(
         mock_coalaip, alice_user, right_data):
-    # Remove the 'allowedBy' key to use the source_right
-    del right_data['allowedBy']
+    # Remove the 'source' key to use the source_right
+    del right_data['source']
     with raises(TypeError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                   source_right={})
@@ -404,8 +404,8 @@ def test_derive_right_with_existing_source_right_raises_on_not_persisted_right(
         mock_coalaip, alice_user, right_data, copyright_entity):
     from coalaip.exceptions import EntityNotYetPersistedError
 
-    # Remove the 'allowedBy' key to use the source_right
-    del right_data['allowedBy']
+    # Remove the 'source' key to use the source_right
+    del right_data['source']
     with raises(EntityNotYetPersistedError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                   source_right=copyright_entity)
@@ -425,17 +425,17 @@ def test_derive_right_with_existing_source_right_raises_on_incompatible_plugin(
     mock_plugin.save.return_value = mock_copyright_create_id
     source_right_from_diff_plugin.create(user=alice_user)
 
-    # Remove the 'allowedBy' key to use the existing_work
-    del right_data['allowedBy']
+    # Remove the 'source' key to use the existing_work
+    del right_data['source']
 
     with raises(IncompatiblePluginError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                   source_right=source_right_from_diff_plugin)
 
 
-def test_derive_right_raises_on_no_allowed_by_or_source_right(
+def test_derive_right_raises_on_no_source_or_source_right(
         mock_plugin, mock_coalaip, right_data, alice_user):
-    del right_data['allowedBy']
+    del right_data['source']
     with raises(ValueError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user)
 

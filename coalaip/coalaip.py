@@ -176,7 +176,7 @@ class CoalaIp:
         Args:
             right_data (dict): Model data for the :attr:`right_entity_cls`.
                 See the given :attr:`right_entity_cls` for requirements.
-                If ``allowedBy`` is provided in the dict, the
+                If ``source`` is provided in the dict, the
                 :attr:`source_right` parameter is ignored.
             current_holder (any, keyword): The current holder of the
                 :attr:`source_right`; must be specified in the format
@@ -185,7 +185,7 @@ class CoalaIp:
                 already persisted Right that the new Right is allowed by.
                 Must be using the same plugin that :class:`CoalaIp` was
                 instantiated with.
-                Optional if ``allowedBy`` is provided in :attr:`right_data`.
+                Optional if ``source`` is provided in :attr:`right_data`.
             right_entity_cls (subclass of :class:`~.Right`, keyword, optional):
                 The class that must be instantiated for the newly
                 derived right.
@@ -213,10 +213,10 @@ class CoalaIp:
         # TODO: add validation that the `current_user` is actually the holder
         # of the `source_right`
 
-        if not right_data.get('allowedBy'):
+        if not right_data.get('source'):
             if source_right is None:
                 raise ValueError(("'source_right' argument to 'derive_right() "
-                                  "must be provided if 'allowedBy' is not "
+                                  "must be provided if 'source' is not "
                                   "given as part of 'right_data'"))
             elif not isinstance(source_right, Right):
                 raise TypeError(("'source_right' argument to 'derive_right()' "
@@ -233,7 +233,7 @@ class CoalaIp:
                     source_right.plugin,
                 ])
 
-            right_data['allowedBy'] = source_right.persist_id
+            right_data['source'] = source_right.persist_id
 
         right = right_entity_cls.from_data(right_data, plugin=self.plugin)
         right.create(current_holder, **kwargs)
