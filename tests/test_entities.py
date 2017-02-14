@@ -607,11 +607,6 @@ def test_work_init_from_data_raises_if_manifestation(mock_plugin, work_data):
     from coalaip.entities import Work
     from coalaip.exceptions import ModelDataError
 
-    is_manifestation_data = copy(work_data)
-    is_manifestation_data['isManifestation'] = True
-    with raises(ModelDataError):
-        Work.from_data(is_manifestation_data, plugin=mock_plugin)
-
     manifestation_of_data = copy(work_data)
     manifestation_of_data['manifestationOfWork'] = {}
     with raises(ModelDataError):
@@ -640,15 +635,6 @@ def test_manifestation_init_raises_without_str_manifestation_of_work(
     from coalaip.entities import Manifestation
     from coalaip.exceptions import ModelDataError
     manifestation_data['manifestationOfWork'] = {}
-    with raises(ModelDataError):
-        Manifestation.from_data(manifestation_data, plugin=mock_plugin)
-
-
-def test_manifestation_init_raises_with_false_is_manifestation(
-        mock_plugin, manifestation_data):
-    from coalaip.entities import Manifestation
-    from coalaip.exceptions import ModelDataError
-    manifestation_data['isManifestation'] = False
     with raises(ModelDataError):
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 

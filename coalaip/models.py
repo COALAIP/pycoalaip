@@ -193,9 +193,7 @@ class LazyLoadableModel(PostInitImmutable):
                                   ld_context=self.ld_context)
 
 
-def _model_factory(*, data=None, default_data=None, model_cls=Model, **kwargs):
-    if default_data and not issubclass(model_cls, LazyLoadableModel):
-        data = extend_dict(default_data, data)
+def _model_factory(*, data=None, model_cls=Model, **kwargs):
     return model_cls(data=data, **kwargs)
 
 
@@ -237,8 +235,7 @@ def manifestation_model_factory(*, validator=validators.is_manifestation_model,
     Expects ``data``, ``validator``, ``model_cls``, ``ld_type``, and
     ``ld_context`` as keyword arguments.
     """
-    return _model_factory(default_data={'isManifestation': True},
-                          validator=validator, ld_type=ld_type, **kwargs)
+    return _model_factory(validator=validator, ld_type=ld_type, **kwargs)
 
 
 def right_model_factory(*, validator=validators.is_right_model,
