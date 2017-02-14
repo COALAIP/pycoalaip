@@ -468,10 +468,10 @@ def test_entity_current_owner(mock_plugin, alice_user, bob_user, entity_name,
     entity = request.getfixturevalue(entity_name)
     mock_history = [{
         'user': alice_user,
-        'ref_id': mock_entity_create_id,
+        'event_id': mock_entity_create_id,
     }, {
         'user': bob_user,
-        'ref_id': mock_entity_create_id,
+        'event_id': mock_entity_create_id,
     }]
 
     entity.persist_id = mock_entity_create_id
@@ -513,10 +513,10 @@ def test_entity_history(mock_plugin, alice_user, bob_user, entity_name,
     entity = request.getfixturevalue(entity_name)
     mock_history = [{
         'user': alice_user,
-        'ref_id': mock_entity_create_id,
+        'event_id': mock_entity_create_id,
     }, {
         'user': bob_user,
-        'ref_id': mock_entity_create_id,
+        'event_id': mock_entity_create_id,
     }]
 
     entity.persist_id = mock_entity_create_id
