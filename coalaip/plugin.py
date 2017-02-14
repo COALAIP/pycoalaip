@@ -49,7 +49,7 @@ class AbstractPlugin(ABC):
                 {
                     'user': A representation of a user as specified by the
                             persistence layer (may omit secret details, e.g. private keys),
-                    'ref_id': A reference id for the ownership event (e.g. transfer id)
+                    'event_id': A reference id for the ownership event (e.g. transfer id)
                 }
 
 
