@@ -215,7 +215,7 @@ def _raise_if_not_given_ld_type(strict_ld_type, *, for_model):
     return decorator
 
 
-@_raise_if_not_given_ld_type('CreativeWork', for_model='Work')
+@_raise_if_not_given_ld_type('AbstractWork', for_model='Work')
 def work_model_factory(*, validator=validators.is_work_model, **kwargs):
     """Generate a Work model.
 
@@ -223,10 +223,10 @@ def work_model_factory(*, validator=validators.is_work_model, **kwargs):
     as keyword arguments.
 
     Raises:
-        :exc:`ModelError`: If a non-'CreativeWork' ``ld_type`` keyword
+        :exc:`ModelError`: If a non-'AbstractWork' ``ld_type`` keyword
             argument is given.
     """
-    kwargs['ld_type'] = 'CreativeWork'
+    kwargs['ld_type'] = 'AbstractWork'
     return _model_factory(validator=validator, **kwargs)
 
 
