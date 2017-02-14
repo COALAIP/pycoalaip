@@ -449,7 +449,7 @@ class Work(Entity):
     A distinct, abstract Creation whose existence is revealed through
     one or more :class:`~.Manifestation` entities.
 
-    :class:`~.Work` entities are always of @type 'CreativeWork'.
+    :class:`~.Work` entities are always of @type 'AbstractWork'.
     """
 
     @classmethod
@@ -459,7 +459,7 @@ class Work(Entity):
         See :meth:`~.Entity.generate_model` for more details.
 
         Ignores the given ``ld_type`` as :class:`~.Work` entities
-        always have @type 'CreativeWork'.
+        always have @type 'AbstractWork'.
         """
         return work_model_factory(*args, **kwargs)
 

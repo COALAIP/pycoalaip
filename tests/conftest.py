@@ -92,7 +92,7 @@ def work_data():
 def work_jsonld(context_urls_all, work_data):
     ld_data = {
         '@context': context_urls_all,
-        '@type': 'CreativeWork',
+        '@type': 'AbstractWork',
         '@id': '',
     }
     return extend_dict(ld_data, work_data)
@@ -101,7 +101,7 @@ def work_jsonld(context_urls_all, work_data):
 @fixture
 def work_json(work_data):
     json_data = {
-        'type': 'CreativeWork',
+        'type': 'AbstractWork',
     }
     return extend_dict(json_data, work_data)
 
