@@ -694,7 +694,7 @@ def test_copyright_init_raises_if_derived(mock_plugin, right_data,
 def test_right_init_raises_if_both_copyright_and_right(
         mock_plugin, entity_cls_name, copyright_data, right_data):
     from coalaip.exceptions import ModelDataError
-    from coalaip.utils import extend_dict
+    from tests.utils import extend_dict
     entity_cls = get_entity_cls(entity_cls_name)
 
     data = extend_dict(right_data, copyright_data)
