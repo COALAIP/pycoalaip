@@ -59,21 +59,10 @@ def is_creation_model(instance, attribute, value):
 @does_not_contain('manifestationOfWork', error_cls=ModelDataError)
 def is_work_model(instance, attribute, value):
     """Must not include keys that indicate the model is a
-    :class:`~.Manifestation` (e.g. ``manifestationOfWork`` or
-    ``isManifestation == True``).
+    :class:`~.Manifestation` (e.g. ``manifestationOfWork``).
     """
 
     is_creation_model(instance, attribute, value)
-
-    is_manifestation = value.get('isManifestation', False)
-    if is_manifestation is not False:
-        instance_name = instance.__class__.__name__
-        err_str = ("'isManifestation' must be False if given in the "
-                   "'{attr}' parameter of a '{cls}'. Given "
-                   "'{value}").format(attr=attribute.name,
-                                      cls=instance_name,
-                                      value=is_manifestation)
-        raise ModelDataError(err_str)
 
 
 def is_manifestation_model(instance, attribute, value):
@@ -89,15 +78,6 @@ def is_manifestation_model(instance, attribute, value):
                    "'{value}'").format(attr=attribute.name,
                                        cls=instance_name,
                                        value=manifestation_of)
-        raise ModelDataError(err_str)
-
-    is_manifestation = value.get('isManifestation', True)
-    if is_manifestation is not True:
-        err_str = ("'isManifestation' must be True if given in the "
-                   "'{attr}' parameter of a '{cls}'. Given "
-                   "'{value}'").format(attr=attribute.name,
-                                       cls=instance_name,
-                                       value=is_manifestation)
         raise ModelDataError(err_str)
 
 

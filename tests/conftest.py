@@ -148,7 +148,6 @@ def manifestation_jsonld_factory(context_urls_all, manifestation_data_factory):
             '@context': context_urls_all,
             '@type': 'CreativeWork',
             '@id': '',
-            'isManifestation': True,
         }
         return extend_dict(
             ld_data,
@@ -167,7 +166,6 @@ def manifestation_json_factory(manifestation_data_factory):
     def factory(**kwargs):
         json_data = {
             'type': 'CreativeWork',
-            'isManifestation': True,
         }
         return extend_dict(
             json_data,
