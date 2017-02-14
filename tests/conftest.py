@@ -1,6 +1,6 @@
 from pytest import fixture
 
-from coalaip.utils import extend_dict
+from tests.utils import extend_dict
 
 
 @fixture

@@ -29,7 +29,7 @@ from coalaip.exceptions import (
     ModelDataError,
     ModelNotYetLoadedError,
 )
-from coalaip.utils import extend_dict, PostInitImmutable
+from coalaip.utils import PostInitImmutable
 
 
 def get_default_ld_context():
