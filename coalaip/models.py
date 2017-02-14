@@ -20,6 +20,7 @@ import attr
 import coalaip.model_validators as validators
 
 from copy import copy
+from functools import wraps
 from types import MappingProxyType
 from coalaip import context_urls
 from coalaip.data_formats import _extract_ld_data, _make_context_immutable
@@ -198,14 +199,15 @@ def _model_factory(*, data=None, default_data=None, model_cls=Model, **kwargs):
     return model_cls(data=data, **kwargs)
 
 
-def _raise_if_not_given_ld_type(model_name, strict_ld_type):
+def _raise_if_not_given_ld_type(strict_ld_type, *, for_model):
     def decorator(func):
+        @wraps(func)
         def raise_if_not_given_type(*args, **kwargs):
             ld_type = kwargs.get('ld_type')
             if ld_type is not None and ld_type != strict_ld_type:
-                raise ModelError("{name} models must be of '@type' "
+                raise ModelError("{model_name} models must be of '@type' "
                                  "'{strict_type}. Given '{given_type}'"
-                                 .format(name=model_name,
+                                 .format(model_name=for_model,
                                          strict_type=strict_ld_type,
                                          given_type=ld_type))
             return func(*args, **kwargs)
@@ -213,7 +215,7 @@ def _raise_if_not_given_ld_type(model_name, strict_ld_type):
     return decorator
 
 
-@_raise_if_not_given_ld_type('Work', 'CreativeWork')
+@_raise_if_not_given_ld_type('CreativeWork', for_model='Work')
 def work_model_factory(*, validator=validators.is_work_model, **kwargs):
     """Generate a Work model.
 
@@ -249,7 +251,7 @@ def right_model_factory(*, validator=validators.is_right_model,
     return _model_factory(validator=validator, ld_type=ld_type, **kwargs)
 
 
-@_raise_if_not_given_ld_type('Copyright', 'Copyright')
+@_raise_if_not_given_ld_type('Copyright', for_model='Copyright')
 def copyright_model_factory(*, validator=validators.is_copyright_model,
                             **kwargs):
     """Generate a Copyright model.
@@ -265,7 +267,8 @@ def copyright_model_factory(*, validator=validators.is_copyright_model,
     return _model_factory(validator=validator, **kwargs)
 
 
-@_raise_if_not_given_ld_type('RightsAssignment', 'RightsTransferAction')
+@_raise_if_not_given_ld_type('RightsTransferAction',
+                             for_model='RightsAssignment')
 def rights_assignment_model_factory(**kwargs):
     """Generate a RightsAssignment model.
 

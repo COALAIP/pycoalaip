@@ -221,7 +221,7 @@ def test_non_strict_type_entity_keeps_diff_type_from_data(
 
     entity = entity_cls.from_data(plugin=mock_plugin, **kwargs)
 
-    # Test entity ignores specified @type
+    # Test entity uses specified @type
     assert entity.model.ld_type == mock_entity_type
     assert entity.to_jsonld()['@type'] == mock_entity_type
 
