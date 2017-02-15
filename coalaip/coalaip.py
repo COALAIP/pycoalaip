@@ -253,8 +253,12 @@ class CoalaIp:
                 :attr:`right`; must be specified in the format
                 required by the persistence layer
             to (any, keyword): The new holder of the right; must be
-                specified in the the format required by the persistence
-                layer
+                specified in the format required by the persistence
+                layer.
+                If the specified user format includes private
+                information (e.g. a private key) but is not required by
+                the persistence layer to identify a transfer recipient,
+                then this information may be omitted in this argument.
             **kwargs: keyword arguments passed through to the
                 :attr:`right`'s ``transfer`` method (e.g.
                 :meth:`~.Right.transfer`'s ``rights_assignment_format``)
