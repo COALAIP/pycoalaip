@@ -125,7 +125,11 @@ class AbstractPlugin(ABC):
             from_user (any, keyword): The current owner, represented in the
                 same format as :meth:`generate_user`'s output
             to_user (any, keyword): The new owner, represented in the same
-                format as :meth:`generate_user`'s output
+                format as :meth:`generate_user`'s output.
+                If the specified user format includes private
+                information (e.g. a private key) but is not required by
+                the persistence layer to identify a transfer recipient,
+                then this information may be omitted in this argument.
 
         Returns:
             str: Id of the transfer action on the persistence layer
