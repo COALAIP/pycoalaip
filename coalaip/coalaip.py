@@ -6,6 +6,7 @@ from collections import namedtuple
 from coalaip.exceptions import (
     EntityNotYetPersistedError,
     IncompatiblePluginError,
+    ModelDataError,
 )
 from coalaip.entities import Copyright, Right, Manifestation, Work
 from coalaip.plugin import AbstractPlugin
@@ -185,7 +186,7 @@ class CoalaIp:
                 already persisted Right that the new Right is allowed by.
                 Must be using the same plugin that :class:`CoalaIp` was
                 instantiated with.
-                Optional if ``source`` is provided in :attr:`right_data`.
+                Ignored if ``source`` is provided in :attr:`right_data`.
             right_entity_cls (subclass of :class:`~.Right`, keyword, optional):
                 The class that must be instantiated for the newly
                 derived right.
@@ -210,10 +211,23 @@ class CoalaIp:
                 the persistence layer
         """
 
-        # TODO: add validation that the `current_user` is actually the holder
-        # of the `source_right`
-
-        if not right_data.get('source'):
+        if right_data.get('source'):
+            # Try to load the given `source` as either a Copyright or Right
+            try:
+                try:
+                    source_right = Copyright.from_persist_id(
+                        right_data['source'], plugin=self.plugin,
+                        force_load=True)
+                except ModelDataError:
+                    source_right = Right.from_persist_id(
+                        right_data['source'], plugin=self.plugin,
+                        force_load=True)
+            except ModelDataError as ex:
+                raise ModelDataError(
+                    ("Entity loaded for 'source' ('{source}') given in "
+                     "'right_data' was not a Right or Copyright").format(
+                         source=right_data['source'])) from ex
+        else:
             if source_right is None:
                 raise ValueError(("'source_right' argument to 'derive_right() "
                                   "must be provided if 'source' is not "
@@ -234,6 +248,13 @@ class CoalaIp:
                 ])
 
             right_data['source'] = source_right.persist_id
+
+        if not self.plugin.is_same_user(source_right.current_owner,
+                                        current_holder):
+            raise ModelDataError(
+                ("The given source Right (either as a 'source' property of "
+                 "'right_data' or as 'source_right') is not currently held by "
+                 "the given 'current_holder'"))
 
         right = right_entity_cls.from_data(right_data, plugin=self.plugin)
         right.create(current_holder, **kwargs)

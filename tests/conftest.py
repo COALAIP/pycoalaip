@@ -26,6 +26,18 @@ def mock_plugin():
 
 
 @fixture
+def mock_plugin_for_deriving_rights(mock_plugin, right_data,
+                                    mock_right_create_id):
+    # Same `mock_plugin` instance used for `mock_coalaip` but with some auto
+    # mocks that are useful for testing CoalaIp.derive_right()
+    mock_plugin.get_history.return_value = []
+    mock_plugin.is_same_user.return_value = True
+    mock_plugin.load.return_value = right_data
+    mock_plugin.save.return_value = mock_right_create_id
+    return mock_plugin
+
+
+@fixture
 def mock_coalaip(mock_plugin):
     from coalaip import CoalaIp
     return CoalaIp(mock_plugin)
@@ -63,6 +75,13 @@ def mock_creation_error():
     from coalaip.exceptions import EntityCreationError
     exception = EntityCreationError('mock_creation_error',
                                     error=Exception())
+    return exception
+
+
+@fixture
+def mock_load_data_error():
+    from coalaip.exceptions import ModelDataError
+    exception = ModelDataError('mock_load_data_error')
     return exception
 
 
@@ -407,18 +426,19 @@ def persisted_jsonld_registration(mock_plugin, mock_coalaip,
 
 
 @fixture
-def persisted_jsonld_derived_right(mock_plugin, mock_coalaip, alice_user,
+def persisted_jsonld_derived_right(mock_plugin_for_deriving_rights,
+                                   mock_coalaip, alice_user,
                                    persisted_jsonld_registration, right_data,
                                    mock_right_create_id):
     copyright_ = persisted_jsonld_registration.copyright
     # Remove the 'source' key to use the persisted copyright
     del right_data['source']
 
-    mock_plugin.save.return_value = 'asdf'
+    mock_plugin_for_deriving_rights.save.return_value = 'asdf'
     right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                       source_right=copyright_)
 
     # Reset mock for later users
-    mock_plugin.save.reset_mock()
-    mock_plugin.save.return_value = None
+    mock_plugin_for_deriving_rights.save.reset_mock()
+    mock_plugin_for_deriving_rights.save.return_value = None
     return right
