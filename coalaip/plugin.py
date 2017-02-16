@@ -34,6 +34,20 @@ class AbstractPlugin(ABC):
         """
 
     @abstractmethod
+    def is_same_user(self, user_a, user_b):
+        """Compare the given user representations to see if they mean
+        the same user on the persistence layer.
+
+        Args:
+            user_a (any): User representation
+            user_b (any): User representation
+
+        Returns:
+            bool: Whether the given user representations are the same
+            user.
+        """
+
+    @abstractmethod
     def get_history(self, persist_id):
         """Get the ownership history of an entity on the persistence
         layer.
