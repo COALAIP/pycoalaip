@@ -293,10 +293,9 @@ def test_register_manifestation_raises_on_creation_error(
 
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
-def test_derive_right(mock_plugin, mock_coalaip, right_data, alice_user,
-                      data_format, use_data_format_enum, mock_right_create_id):
-    mock_plugin.save.return_value = mock_right_create_id
-
+def test_derive_right(mock_plugin_for_deriving_rights, mock_coalaip,
+                      right_data, alice_user, data_format,
+                      use_data_format_enum, mock_right_create_id):
     derive_right_kwargs = {}
     if data_format:
         if use_data_format_enum:
@@ -320,17 +319,15 @@ def test_derive_right(mock_plugin, mock_coalaip, right_data, alice_user,
         right_persisted_data = right.to_jsonld()
 
     # Check we called plugin.save() with the right format
-    mock_plugin.save.assert_called_once_with(right_persisted_data,
-                                             user=alice_user)
+    mock_plugin_for_deriving_rights.save.assert_called_once_with(
+        right_persisted_data, user=alice_user)
 
 
-def test_derive_right_with_source_in_data(mock_plugin, mock_coalaip,
-                                          right_data_factory, alice_user,
-                                          copyright_entity,
-                                          mock_right_create_id):
+def test_derive_right_with_source_in_data(mock_plugin_for_deriving_rights,
+                                          mock_coalaip, right_data_factory,
+                                          alice_user, copyright_entity):
     ignored_copyright_entity = copyright_entity
     provided_copyright_id = 'provided_copyright_id'
-    mock_plugin.save.return_value = mock_right_create_id
 
     # Create the default right model, but change the 'source' key to
     # differentiate it from copyright_entity
@@ -344,33 +341,30 @@ def test_derive_right_with_source_in_data(mock_plugin, mock_coalaip,
     assert right.data['source'] == provided_copyright_id
 
 
-def test_derive_right_with_existing_source_right(mock_plugin, mock_coalaip,
-                                                 right_data, alice_user,
-                                                 persisted_jsonld_registration,
-                                                 mock_right_create_id):
+def test_derive_right_with_existing_source_right(
+        mock_plugin_for_deriving_rights, mock_coalaip, right_data, alice_user,
+        persisted_jsonld_registration):
     persisted_copyright = persisted_jsonld_registration.copyright
-    mock_plugin.save.return_value = mock_right_create_id
 
     # Remove the 'source' key to use the source_right
     del right_data['source']
 
     # Test the new Right is created with the given source_right
-    mock_plugin.reset_mock()  # Reset call counts on the mock from before
     right = mock_coalaip.derive_right(right_data, current_holder=alice_user,
                                       source_right=persisted_copyright)
     assert right.data['source'] == persisted_copyright.persist_id
 
     # Check we called plugin.save() with the correct Copyright
-    mock_plugin.save.assert_called_once_with(right.to_jsonld(),
-                                             user=alice_user)
+    mock_plugin_for_deriving_rights.save.assert_called_once_with(
+        right.to_jsonld(), user=alice_user)
 
 
-def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
-                                             right_data, alice_user,
-                                             mock_right_create_id):
+def test_derive_right_with_custom_entity_cls(mock_plugin_for_deriving_rights,
+                                             mock_coalaip, right_data,
+                                             alice_user, mock_right_create_id):
     from coalaip.entities import Right
     from coalaip.models import _model_factory
-    mock_plugin.save.return_value = mock_right_create_id
+    mock_plugin_for_deriving_rights.save.return_value = mock_right_create_id
 
     custom_right_type = 'CustomRight'
 
@@ -392,7 +386,7 @@ def test_derive_right_with_custom_entity_cls(mock_plugin, mock_coalaip,
 
 
 def test_derive_right_with_existing_source_right_raises_on_non_right(
-        mock_coalaip, alice_user, right_data):
+        mock_plugin_for_deriving_rights, mock_coalaip, alice_user, right_data):
     # Remove the 'source' key to use the source_right
     del right_data['source']
     with raises(TypeError):
@@ -401,7 +395,8 @@ def test_derive_right_with_existing_source_right_raises_on_non_right(
 
 
 def test_derive_right_with_existing_source_right_raises_on_not_persisted_right(
-        mock_coalaip, alice_user, right_data, copyright_entity):
+        mock_plugin_for_deriving_rights, mock_coalaip, alice_user, right_data,
+        copyright_entity):
     from coalaip.exceptions import EntityNotYetPersistedError
 
     # Remove the 'source' key to use the source_right
@@ -412,8 +407,8 @@ def test_derive_right_with_existing_source_right_raises_on_not_persisted_right(
 
 
 def test_derive_right_with_existing_source_right_raises_on_incompatible_plugin(
-        mock_coalaip, mock_plugin, alice_user, copyright_data, right_data,
-        mock_copyright_create_id):
+        mock_plugin_for_deriving_rights, mock_coalaip, alice_user,
+        copyright_data, right_data, mock_copyright_create_id):
     from coalaip.entities import Copyright
     from coalaip.exceptions import IncompatiblePluginError
     from tests.utils import create_mock_plugin
@@ -422,7 +417,7 @@ def test_derive_right_with_existing_source_right_raises_on_incompatible_plugin(
                                                         plugin=diff_plugin)
 
     # Save the source_right
-    mock_plugin.save.return_value = mock_copyright_create_id
+    mock_plugin_for_deriving_rights.save.return_value = mock_copyright_create_id
     source_right_from_diff_plugin.create(user=alice_user)
 
     # Remove the 'source' key to use the existing_work
@@ -434,18 +429,37 @@ def test_derive_right_with_existing_source_right_raises_on_incompatible_plugin(
 
 
 def test_derive_right_raises_on_no_source_or_source_right(
-        mock_plugin, mock_coalaip, right_data, alice_user):
+        mock_plugin_for_deriving_rights, mock_coalaip, right_data, alice_user):
     del right_data['source']
     with raises(ValueError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user)
 
 
-def test_derive_right_raises_on_creation_error(mock_plugin, mock_coalaip,
-                                               right_data, alice_user):
+def test_derive_right_raises_on_wrong_entity_given_for_source(
+        mock_plugin_for_deriving_rights, mock_coalaip, mock_load_data_error,
+        right_data, alice_user):
+    from coalaip.exceptions import ModelDataError
+    mock_plugin_for_deriving_rights.load.side_effect = mock_load_data_error
+    with raises(ModelDataError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user)
+
+
+def test_derive_right_raises_on_wrong_rights_holder(
+        mock_plugin_for_deriving_rights, mock_coalaip, right_data, alice_user):
+    from coalaip.exceptions import ModelDataError
+    mock_plugin_for_deriving_rights.is_same_user.return_value = False
+    with raises(ModelDataError):
+        mock_coalaip.derive_right(right_data, current_holder=alice_user)
+
+
+def test_derive_right_raises_on_creation_error(mock_plugin_for_deriving_rights,
+                                               mock_coalaip, right_data,
+                                               alice_user):
     from coalaip.exceptions import EntityCreationError
 
     mock_creation_error = 'mock_creation_error'
-    mock_plugin.save.side_effect = EntityCreationError(mock_creation_error)
+    mock_plugin_for_deriving_rights.save.side_effect = EntityCreationError(
+        mock_creation_error)
 
     with raises(EntityCreationError):
         mock_coalaip.derive_right(right_data, current_holder=alice_user)
