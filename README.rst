@@ -20,12 +20,11 @@ pycoalaip
      :alt: Updates
 
 
-Python reference implementation for COALA IP.
-
+Python reference implementation for `COALA IP <https://github.com/coalaip/specs>`_.
 
 * Development Status: Pre-Alpha
 * Free software: Apache Software License 2.0
-* Documentation: https://pycoalaip.readthedocs.io.
+* Documentation: https://pycoalaip.readthedocs.io
 
 
 Features
@@ -49,8 +48,9 @@ To learn more about how to use these features, you may be interested in the
 TODO
 ----
 
-* [ ] Host COALA IP JSON-LD definitions and set `<coalaip placeholder>` to the
+* Host COALA IP JSON-LD definitions and set ``<coalaip placeholder>`` to the
   purl for the definitions.
+* Support IPLD serialization
 
 
 Credits
