@@ -53,6 +53,23 @@ TODO
 * Support IPLD serialization
 
 
+Packaging
+---------
+
+Bumping versions:
+
+.. code-block:: bash
+
+    $ bumpversion patch
+
+Releasing to pypi:
+
+.. code-block:: bash
+
+    $ make release
+    $ twine upload dist/*
+
+
 Credits
 ---------
 
