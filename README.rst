@@ -22,7 +22,7 @@ pycoalaip
 
 Python reference implementation for `COALA IP <https://github.com/coalaip/specs>`_.
 
-* Development Status: Pre-Alpha
+* Development Status: Alpha
 * Free software: Apache Software License 2.0
 * Documentation: https://pycoalaip.readthedocs.io
 

@@ -6,7 +6,7 @@
 Welcome to pycoalaip's documentation!
 ======================================
 
-.. important:: **Development Status: Pre-Alpha**
+.. important:: **Development Status: Alpha**
 
 Contents:
 

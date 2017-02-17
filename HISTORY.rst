@@ -2,6 +2,25 @@
 History
 =======
 
+0.0.1 (2016-02-17)
+------------------
+
+First alpha release on PyPI.
+
+Additional features added with no backwards-incompatible interface changes.
+COALA IP models are backwards-incompatible to previous versions due to upgrades
+related to spec changes.
+
+Some highlights:
+
+* Queryability of an Entity's ownership history and current owner
+* Entities can be given a custom ``@id``
+* Additional sanity checks employed when deriving Rights, to ensure that a
+  correct source Right and current holder are given
+* Update COALA IP models to latest spec
+* Added usage documentation
+
+
 0.0.1.dev3 (2016-12-06)
 -----------------------
 
