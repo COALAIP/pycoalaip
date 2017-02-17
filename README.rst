@@ -31,7 +31,19 @@ Python reference implementation for COALA IP.
 Features
 --------
 
-* TODO
+* ``CoalaIp.generate_user()``: Create a user representation suitable for use
+  with ``coalaip``
+* ``CoalaIp.register_manifestation()``: Registering a ``Manifestation`` (and
+  along with it, an associated parent ``Work`` and a ``Copyright`` of the
+  ``Manifestation``)
+* ``CoalaIp.derive_right()``: Derivation of a ``Right`` from an allowing source
+  ``Right`` or ``Copyright``
+* ``CoalaIp.transfer_right()``: Transfer of a ``Right`` or ``Copyright`` from
+  the current owner to a new owner
+* Querying the ownership history of an COALA IP entity
+
+To learn more about how to use these features, you may be interested in the
+`usage section of the docs <https://pycoalaip.readthedocs.io/en/latest/usage.html>`_.
 
 
 TODO
