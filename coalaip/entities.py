@@ -517,6 +517,7 @@ class Right(TransferrableEntity):
                 by the persistence layer
             rights_assignment_format (str, keyword, optional): Data
                 format of the created entity; must be one of:
+
                     - 'jsonld' (default)
                     - 'json'
                     - 'ipld'
