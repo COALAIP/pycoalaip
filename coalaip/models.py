@@ -51,6 +51,7 @@ class Model:
     Attributes:
         data (dict): Model data. Uses :attr:`validator` for validation.
         ld_type (str): @type of the entity
+        ld_id (str): @id of the entity
         ld_context (str or dict or [str|dict], keyword): "@context" for
             the entity as either a string URL or array of string URLs or
             dictionaries. See the `JSON-LD spec on contexts
@@ -63,6 +64,7 @@ class Model:
     data = attr.ib(convert=lambda data: MappingProxyType(copy(data)),
                    validator=validators.use_model_attr('validator'))
     ld_type = attr.ib(validator=attr.validators.instance_of(str))
+    ld_id = attr.ib(default='', validator=attr.validators.instance_of(str))
     ld_context = attr.ib(default=attr.Factory(get_default_ld_context),
                          convert=_make_context_immutable)
     validator = attr.ib(default=DEFAULT_DATA_VALIDATOR,
@@ -104,13 +106,15 @@ class LazyLoadableModel(PostInitImmutable):
     validator = attr.ib(validator=validators.is_callable)
     loaded_model = attr.ib(init=False)
 
-    def __init__(self, ld_type, ld_context=None,
+    def __init__(self, ld_type, ld_id=None, ld_context=None,
                  validator=DEFAULT_DATA_VALIDATOR, data=None):
         """Initialize a :class:`~.LazyLoadableModel` instance.
 
         If a :attr:`data` is provided, a :class:`Model` is generated
         as the instance's :attr:`~.LazyLoadableModel.loaded_model` using
         the given arguments.
+
+        Ignores :attr:`ld_id`, see the :meth:`ld_id` property instead.
         """
 
         self.ld_type = ld_type
@@ -145,6 +149,18 @@ class LazyLoadableModel(PostInitImmutable):
             raise ModelNotYetLoadedError()
         return self.loaded_model.data
 
+    @property
+    def ld_id(self):
+        """str: @id of the entity.
+
+        Raises :exc:`~.ModelNotYetLoadedError` if the data has not been
+        loaded yet.
+        """
+
+        if self.loaded_model is None:
+            raise ModelNotYetLoadedError()
+        return self.loaded_model.ld_id
+
     def load(self, persist_id, *, plugin):
         """Load the :attr:`~.LazyLoadableModel.loaded_model` of this
         instance. Noop if model was already loaded.
@@ -172,6 +188,7 @@ class LazyLoadableModel(PostInitImmutable):
         extracted_ld_result = _extract_ld_data(persist_data)
         loaded_data = extracted_ld_result.data
         loaded_type = extracted_ld_result.ld_type
+        loaded_id = extracted_ld_result.ld_id
         loaded_context = extracted_ld_result.ld_context
 
         # Sanity check the loaded type and context
@@ -188,9 +205,16 @@ class LazyLoadableModel(PostInitImmutable):
                                                   self_ctx=self.ld_context)
             )
 
-        self.loaded_model = Model(data=loaded_data, validator=self.validator,
-                                  ld_type=self.ld_type,
-                                  ld_context=self.ld_context)
+        kwargs = {
+            'data': loaded_data,
+            'validator': self.validator,
+            'ld_type': self.ld_type,
+            'ld_context': self.ld_context,
+        }
+        if loaded_id:
+            kwargs['ld_id'] = loaded_id
+
+        self.loaded_model = Model(**kwargs)
 
 
 def _model_factory(*, data=None, model_cls=Model, **kwargs):
