@@ -144,6 +144,20 @@ def test_entity_from_data_consistent(mock_plugin, entity_cls_name, request):
 
 
 @mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
+def test_entity_from_jsonld_data_keeps_ld_id(mock_plugin, entity_cls_name,
+                                             mock_entity_create_id, request):
+    from tests.utils import assert_key_values_present_in_dict
+    entity_cls = get_entity_cls(entity_cls_name)
+    jsonld = request.getfixturevalue(JSONLD_NAME_FOR_ENTITY_CLS[entity_cls_name])
+
+    jsonld['@id'] = mock_entity_create_id
+    entity = entity_cls.from_data(data=jsonld, data_format='jsonld',
+                                  plugin=mock_plugin)
+
+    assert_key_values_present_in_dict(entity.to_jsonld(), **jsonld)
+
+
+@mark.parametrize('entity_cls_name', ALL_ENTITY_CLS)
 def test_entity_data_and_to_format_are_copies(mock_plugin, entity_cls_name,
                                               request):
     entity_cls = get_entity_cls(entity_cls_name)

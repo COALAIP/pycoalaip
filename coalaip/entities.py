@@ -190,7 +190,6 @@ class Entity(ABC, PostInitImmutable):
                 validation
         """
 
-    # FIXME: support @ids in models
     @classmethod
     def from_data(cls, data, *, data_format=DataFormat.jsonld, plugin):
         """Generic factory for instantiating :attr:`cls` entities
@@ -206,6 +205,7 @@ class Entity(ABC, PostInitImmutable):
             - jsonld:
                 - '@type' denotes the Linked Data type of the entity
                 - '@context' denotes the JSON-LD context of the entity
+                - '@id' denotes the JSON-LD identity of the entity
             - Otherwise:
                 - 'type' denotes the Linked Data type of the entity
 
@@ -232,8 +232,6 @@ class Entity(ABC, PostInitImmutable):
                 result = _extract_ld_data(data, data_format)
                 model_kwargs = {k: v for (k, v) in result._asdict().items()
                                 if v is not None}
-                if 'ld_id' in model_kwargs:
-                    del model_kwargs['ld_id']
                 return model_kwargs
             return get_model_kwargs
 
@@ -372,14 +370,15 @@ class Entity(ABC, PostInitImmutable):
     def to_jsonld(self):
         """Output this entity as a JSON-LD-serializable dict.
 
-        Adds the @type and @context as-is, and an empty @id to refer to
-        the current :attr:`~.Entity.persist_id` document.
+        Adds the @type, @context, and @id as-is. If no @id was given, an
+        empty @id is used by default to refer to the current
+        :attr:`~.Entity.persist_id` document.
         """
 
         ld_model = self.data
         ld_model['@context'] = _copy_context_into_mutable(self.model.ld_context)
         ld_model['@type'] = self.model.ld_type
-        ld_model['@id'] = ''  # Specifying an empty @id resolves to the current document
+        ld_model['@id'] = self.model.ld_id
         return ld_model
 
     def to_ipld(self):
