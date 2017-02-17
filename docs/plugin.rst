@@ -7,6 +7,8 @@ persist COALA IP entities to a distributed ledger, database, or file storage
 system.
 
 
+.. _available-plugins:
+
 Available Plugins
 -----------------
 
