@@ -131,29 +131,28 @@ class CoalaIp:
 
         work = None
         if not manifestation_data.get('manifestationOfWork'):
-            work = existing_work
             if existing_work is None:
                 if work_data is None:
                     work_data = {'name': manifestation_data.get('name')}
                 work = Work.from_data(work_data, plugin=self.plugin)
                 work.create(copyright_holder, **kwargs)
-            elif not isinstance(existing_work, Work):
-                raise TypeError(("'existing_work' argument to "
-                                 "'register_manifestation()' must be a Work. "
-                                 'Given an instance of '
-                                 "'{}'".format(type(existing_work))))
-            elif existing_work.persist_id is None:
-                raise EntityNotYetPersistedError(
-                    ("Work given as 'existing_work' to "
-                     "'register_manifestation()' must be already created on "
-                     'the backing persistence layer.')
-                )
-            elif existing_work.plugin != self.plugin:
-                raise IncompatiblePluginError([
-                    self.plugin,
-                    existing_work.plugin,
-                ])
-
+            else:
+                if not isinstance(existing_work, Work):
+                    raise TypeError(
+                        ("'existing_work' argument to "
+                         "'register_manifestation()' must be a Work. Given an "
+                         "instance of '{}'".format(type(existing_work))))
+                elif existing_work.persist_id is None:
+                    raise EntityNotYetPersistedError(
+                        ("Work given as 'existing_work' to "
+                         "'register_manifestation()' must be already created "
+                         'on the backing persistence layer.'))
+                elif existing_work.plugin != self.plugin:
+                    raise IncompatiblePluginError([
+                        self.plugin,
+                        existing_work.plugin,
+                    ])
+                work = existing_work
             manifestation_data['manifestationOfWork'] = work.persist_id
 
         manifestation = Manifestation.from_data(manifestation_data,
