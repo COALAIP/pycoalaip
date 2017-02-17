@@ -48,9 +48,6 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/coalaip.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ coalaip
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 
