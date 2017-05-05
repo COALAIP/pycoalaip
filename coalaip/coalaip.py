@@ -57,6 +57,13 @@ class CoalaIp:
 
         return self.plugin.generate_user(*args, **kwargs)
 
+    def register_work(self, work_data, *, copyright_holder, **kwargs):
+        """Register a work"""
+
+        work = Work.from_data(work_data, plugin=self.plugin)
+        work.create(copyright_holder, **kwargs)
+        return work
+
     # TODO: could probably have a 'safe' check to make sure the entities are actually created
     def register_manifestation(self, manifestation_data, *, copyright_holder,
                                existing_work=None, work_data=None, **kwargs):
