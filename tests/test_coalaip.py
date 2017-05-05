@@ -66,7 +66,7 @@ def test_register_manifestation(mock_plugin, mock_coalaip, manifestation_data,
     manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
         manifestation_data,
         copyright_holder=alice_user,
-        **register_manifestation_kwargs,
+        **register_manifestation_kwargs
     )
     assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
     assert manifestation.data['manifestationOfWork'] == work.persist_id
@@ -133,6 +133,26 @@ def test_register_manifestation_with_work_id_in_data(
     assert work is None
     assert manifestation_copyright.data['rightsOf'] == manifestation.persist_id
     assert manifestation.data['manifestationOfWork'] == provided_work_id
+
+
+def test_register_work(mock_plugin, mock_coalaip, manifestation_data,
+                       alice_user, work_data):
+    from tests.utils import (
+        assert_key_values_present_in_dict,
+    )
+    work = mock_coalaip.register_work(
+        work_data=work_data,
+        copyright_holder=alice_user
+    )
+
+    work_persisted_data = work.to_jsonld()
+
+    if work_data:
+        assert_key_values_present_in_dict(work_persisted_data, **work_data)
+        assert_key_values_present_in_dict(work.data, **work_data)
+
+    # Check we called plugin.save() with the correct data
+    mock_plugin.save.assert_any_call(work_persisted_data, user=alice_user)
 
 
 @mark.parametrize('work_data', [None, {'name': 'mock_work_name'}])
