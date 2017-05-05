@@ -2,6 +2,17 @@
 History
 =======
 
+0.0.2 (2017-05-05)
+------------------
+
+Some changes during the OMI hackfest!
+
+Some highlights:
+
+* Add `register_work` method to enable registering a work without
+  necessarily registering a manifestation.
+
+
 0.0.1 (2017-02-17)
 ------------------
 
