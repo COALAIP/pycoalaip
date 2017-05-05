@@ -62,7 +62,6 @@ class CoalaIp:
 
         work = Work.from_data(work_data, plugin=self.plugin)
         work.create(copyright_holder, **kwargs)
-        import pdb; pdb.set_trace()
         return work
 
     # TODO: could probably have a 'safe' check to make sure the entities are actually created
