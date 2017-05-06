@@ -38,7 +38,7 @@ docs_require = [
 
 setup(
     name='coalaip',
-    version='0.0.2',
+    version='0.0.3',
     description="Python reference implementation for COALA IP",
     long_description=long_discription,
     author="BigchainDB",

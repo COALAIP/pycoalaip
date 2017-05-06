@@ -66,7 +66,9 @@ class CoalaIp:
 
     # TODO: could probably have a 'safe' check to make sure the entities are actually created
     def register_manifestation(self, manifestation_data, *, copyright_holder,
-                               existing_work=None, work_data=None, **kwargs):
+                               existing_work=None, work_data=None,
+                               create_work=True, create_copyright=True,
+                               **kwargs):
         """Register a Manifestation and automatically assign its
         corresponding Copyright to the given :attr:`user`.
 
@@ -97,6 +99,11 @@ class CoalaIp:
                 See :class:`~.Work` for requirements.
                 If not specified, the Work will be created using only
                 the name of the Manifestation.
+            create_work (bool, keyword, optional): To allow for the creation
+                of a Manifestation without attaching a Work. Default is True.
+            create_copyright (bool, keyword, optional): To allow for the
+                creation of a Manifestation without attaching a Copyright.
+                Default is True.
             **kwargs: Keyword arguments passed through to each model's
                 :meth:`~.Entity.create` (e.g. ``data_format``).
 
@@ -137,7 +144,8 @@ class CoalaIp:
         # we confirm that an entity has actually been created
 
         work = None
-        if not manifestation_data.get('manifestationOfWork'):
+        manifestation_copyright = None
+        if not manifestation_data.get('manifestationOfWork') and create_work:
             if existing_work is None:
                 if work_data is None:
                     work_data = {'name': manifestation_data.get('name')}
@@ -166,10 +174,11 @@ class CoalaIp:
                                                 plugin=self.plugin)
         manifestation.create(copyright_holder, **kwargs)
 
-        copyright_data = {'rightsOf': manifestation.persist_id}
-        manifestation_copyright = Copyright.from_data(copyright_data,
-                                                      plugin=self.plugin)
-        manifestation_copyright.create(copyright_holder, **kwargs)
+        if create_copyright:
+            copyright_data = {'rightsOf': manifestation.persist_id}
+            manifestation_copyright = Copyright.from_data(copyright_data,
+                                                          plugin=self.plugin)
+            manifestation_copyright.create(copyright_holder, **kwargs)
 
         return RegistrationResult(manifestation_copyright, manifestation, work)
 

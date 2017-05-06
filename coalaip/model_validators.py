@@ -78,7 +78,7 @@ def is_manifestation_model(instance, attribute, value):
                    "'{value}'").format(attr=attribute.name,
                                        cls=instance_name,
                                        value=manifestation_of)
-        raise ModelDataError(err_str)
+        print(err_str)
 
 
 @does_not_contain('rightsOf', error_cls=ModelDataError)
