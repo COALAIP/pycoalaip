@@ -2,6 +2,15 @@
 History
 =======
 
+0.0.3 (2017-05-06)
+------------------
+
+Some changes during the OMI hackfest!
+
+* Make creation of Work and Copyright optional when registering
+  a Manifestation.
+
+
 0.0.2 (2017-05-05)
 ------------------
 
