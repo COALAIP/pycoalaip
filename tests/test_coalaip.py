@@ -32,6 +32,50 @@ def test_generate_user(mock_plugin, mock_coalaip, alice_user):
                                                  **generate_user_kwargs)
 
 
+def test_register_manifestation_without_creating_work(mock_plugin,
+        mock_coalaip, manifestation_data, alice_user,
+        mock_manifestation_create_id):
+    from tests.utils import (
+        assert_key_values_present_in_dict,
+        create_entity_id_setter,
+    )
+
+    # Remove the 'manifestationOfWork' key to create a new Work
+    del manifestation_data['manifestationOfWork']
+
+    manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
+        manifestation_data,
+        copyright_holder=alice_user,
+        create_work=False,
+        create_copyright=False
+    )
+
+    manifestation_persisted_data = manifestation.to_jsonld()
+    if manifestation_data:
+        assert_key_values_present_in_dict(manifestation_persisted_data,
+                                          **manifestation_data)
+        assert_key_values_present_in_dict(manifestation.data,
+                                          **manifestation_data)
+
+    assert manifestation_copyright == None
+    assert work == None
+    assert 'manifestationOfWork' not in manifestation.data
+
+    # Test the entities were persisted with the set persisted ids
+    assert manifestation.persist_id is not None
+
+    # Test the correct data format was persisted
+    manifestation_persisted_data = manifestation.to_jsonld()
+
+    # Check we called plugin.save() with the correct data
+    mock_save_call_list = mock_plugin.save.call_args_list
+    assert len(mock_save_call_list) == 1
+    assert mock_save_call_list[0] == (
+        (manifestation_persisted_data,),
+        {'user': alice_user},
+    )
+
+
 @mark.parametrize('use_data_format_enum', [True, False])
 @mark.parametrize('data_format', [None, 'json', 'jsonld', mark.skip('ipld')])
 def test_register_manifestation(mock_plugin, mock_coalaip, manifestation_data,
