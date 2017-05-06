@@ -37,13 +37,12 @@ def test_register_manifestation_without_creating_work(mock_plugin,
         mock_manifestation_create_id):
     from tests.utils import (
         assert_key_values_present_in_dict,
-        create_entity_id_setter,
     )
 
     # Remove the 'manifestationOfWork' key to create a new Work
     del manifestation_data['manifestationOfWork']
 
-    manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation(
+    manifestation_copyright, manifestation, work = mock_coalaip.register_manifestation( #noqa
         manifestation_data,
         copyright_holder=alice_user,
         create_work=False,
@@ -57,8 +56,8 @@ def test_register_manifestation_without_creating_work(mock_plugin,
         assert_key_values_present_in_dict(manifestation.data,
                                           **manifestation_data)
 
-    assert manifestation_copyright == None
-    assert work == None
+    assert manifestation_copyright is None
+    assert work is None
     assert 'manifestationOfWork' not in manifestation.data
 
     # Test the entities were persisted with the set persisted ids

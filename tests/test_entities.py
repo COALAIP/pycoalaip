@@ -634,6 +634,7 @@ def test_manifestation_init_raises_if_no_name(mock_plugin, manifestation_data):
     with raises(ModelDataError):
         Manifestation.from_data(manifestation_data, plugin=mock_plugin)
 
+
 @mark.skip(reason="We decided to go with Manifestation's that do not need works to be registered.")
 def test_manifestation_init_raises_without_manifestation_of_work(
         mock_plugin, manifestation_data):
